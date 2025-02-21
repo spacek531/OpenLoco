@@ -4041,13 +4041,16 @@ namespace OpenLoco::Vehicles
     }
 
     // 0x004ADC9D
-    // esi : this
-    // eax : bool unk_bool
     void VehicleHead::loc_4ADC9D()
     {
         // push esi (this)
 
         // loc_4ADC9E
+        // movzx esi, word ptr [esi+3Ah]
+        // shl esi, 7
+        // add esi, offset things
+        // cmp byte ptr [esi+1], 6
+        // jnz short loc_4ADC9E
         VehicleBase* tailComponent = getTail(this);
 
         // nullptr check added
@@ -4096,8 +4099,8 @@ namespace OpenLoco::Vehicles
             // add ax, ds:word_4F6F8E[ebp*8]
             // add cx, ds:word_4F6F90[ebp*8]
             // add dx, ds:word_4F6F92[ebp*8]
-            auto positionOffset = _vehicleData_4F6F8E[routeMasked];
-            location += Pos3(positionOffset.unk_x, positionOffset.unk_y, positionOffset.unk_z);
+            auto locationOffset = _vehicleData_4F6F8E[routeMasked];
+            location += Pos3(locationOffset.unk_x, locationOffset.unk_y, locationOffset.unk_z);
 
             // pop ebp // handle
             // // stack: (this)
@@ -4166,9 +4169,9 @@ namespace OpenLoco::Vehicles
         auto tailTailTailRouteHandleVehicleRef2 = tailTailTailRoutingHandle.getVehicleRef();
         tailTailTailRouteHandleVehicleRef2 <<= 1;
         // add ebp, offset word_96885C
-        tailTailTailRouteHandleVehicleRef2 += RoutingManager::getRouting(RoutingHandle(0)); // ???
+        tailTailTailRouteHandleVehicleRef2 += RoutingManager::getRouting(RoutingHandle(0)); // Redo this for C++, writing the routing
         // mov edi, offset unk_1136176
-        int32_t edi = _vehicleUpdate_var_1136176; // this gets overwritten before use???
+        int32_t edi = _vehicleUpdate_var_1136176; // what is this value?
 
         auto swapRoutingHandle = tailTailTailRoutingHandle;
         // loc_4ADD65
@@ -4181,7 +4184,7 @@ namespace OpenLoco::Vehicles
             // mov [edi], ax
             // add edi, 2
             uint16_t ax = tailTailTailRouteHandleVehicleRef2 + tailTailTailRouteHandleIndex * 2; // what is this???
-
+            _vehicleUpdate_var_1136176 = ax; // where is this read?
             edi = ax + 2; // why add 2?
 
             // cmp bx, cx
@@ -4193,7 +4196,7 @@ namespace OpenLoco::Vehicles
 
             // loc_4ADD65 cont.
             // dec ebx
-            swapRoutingHandle._data--; // decrement index for what purpose? What prevents this loop from never-ending?
+            swapRoutingHandle._data--; // write only one side of the routes?
             // jmp short_loc 4ADD65
         }
 
@@ -4229,7 +4232,9 @@ namespace OpenLoco::Vehicles
             // loc_4ADD9D
             // and  ax, 0BFFFh
             ax &= 0xBFFF;
-            // mov [ebp + ebx * 2 ], ax // I have no idea what this syntax means???
+
+            // mov [ebp + ebx * 2 ], ax // write to the routing array
+            // TODO: figure out the C++ way of doing this
 
             // inc ebx
             // add ecx, 2
@@ -4243,6 +4248,20 @@ namespace OpenLoco::Vehicles
                 break;
             }
         }
+
+        // loc_4ADDAE // write sentinel value to up to the last routing handle
+        // cmp ebx, 40h
+        // jnb short loc_4ADDBD
+
+        // loc_4ADDAE cont.
+        // mov word ptr [ebp+ex*2+0], 0FFFEh
+        // inc ebx
+        // jmp short loc_4ADDAE
+
+        // loc_4ADDBD
+        // pop esi
+
+        // rejoin with other branch at loc_4ADDBE
     }
 
     void VehicleHead::loc_4ADB7A_cont()
@@ -4281,10 +4300,10 @@ namespace OpenLoco::Vehicles
                 // loc_4ADBB3 cont.
                 // and ebp, 1FFh
                 route = routeMasked;
-                // xor edi, edi // edi should be nothing?
+                // xor edi, edi // edi should already be nothing?
                 // call sub_489643F
                 // is this SetSignalState or GetSignalState? what are the registers and returns of these functions???
-                route = getSignalState(location, bp_TAndD, bh, 0); // I don't know what the flags are
+                route = getSignalState(location, bp_TAndD, bh, 0); // I don't know what the flags are. I am just guessing that it uses ebp as the return register.
             }
             // loc_4ADBD1
             // and ebp, 1FFh
@@ -4303,6 +4322,100 @@ namespace OpenLoco::Vehicles
             // cmp word_96885C[ebp*2], 0xFFFEh
             // jnz short loc_4ADBB3
         }
+
+        // loc_4ADBD1 cont.
+        // pop esi
+        // push esi
+
+        // movzx esi, word ptr [esi+3Ah]
+        // shl esi, 7
+        // add esi, offset things
+        auto tailTailComponent = tailComponent->nextVehicleComponent(); // get the second bogie of the last Car?
+
+        // nullptr check added
+        if (tailTailComponent == nullptr)
+        {
+            return;
+        }
+
+        // movzx esi, word ptr [esi+3Ah]
+        // shl esi, 7
+        // add esi, offset things
+        auto tailTailTailComponent = tailTailComponent->nextVehicleComponent(); // get the body of the last Car?
+
+        // nullptr check added
+        if (tailTailTailComponent == nullptr)
+        {
+            return;
+        }
+
+        // movzx ebp, word ptr [esi+36h]
+        auto tailTailTailRoutingHandle = tailTailTailComponent->getRoutingHandle();
+
+        // loc_4ADC26
+        // Why are we doing this a second time?
+        // movzx esi, word ptr [esi+3Ah]
+        // shl esi, 7
+        // add esi, offset things
+        // cmp byte ptr [esi+1], 6
+        // jnz short loc_4ADC26
+        VehicleBase* realTailComponent = getTail(tailTailTailComponent);
+
+        // nullptr check added
+        if (realTailComponent == nullptr)
+        {
+            return;
+        }
+
+        // loc_4ADC26 cont.
+        // mov cx, [esi+36h]
+        // and cx, 3Fh
+        // mov ebx, ebp
+        // and ebp, 0FFFFFFC0h
+        // shl ebp, 1
+        // add ebp, offset word_96885C // get the start of the route array
+        // mov edi, offset unk_1136176
+
+        // loc_4ADC53
+        // and ebx, 3Fh
+        // mov ax, [ebp + ebx *2]
+        // mov [edi], ax
+        // add edi, 2
+        // cmp bx, cx
+        // jz short loc_4ADC69
+
+        // loc_4ADC53 cont.
+        // dec ebx
+        // jmp short loc_4ADC53
+
+        // loc_4ADC69
+        // xor ebx, ebx
+        // mov ecx, offset unk_1136176
+
+        // loc_4ADC70
+        // mov ax, [ecx]
+        // xor ax, 4
+        // and ax, 0BFFFh
+        // mov [ebp+ebx*2,0], ah
+        // inc ebx
+        // add ecx, 2
+        // cmp ecx, edi
+        // jb short loc_4ADC70
+
+        // loc 4ADC88
+        // cmp ebx, 40h // 64
+        // jnb short loc_4ADC97
+
+        // loc_4ADC88 cont.
+        // mov word ptr [ebp+ebx*2], 0FFFEh
+        // inc ebx
+        // jmp short loc_4ADC88
+
+        // loc_4ADC97
+        // pop esi
+        // jmp loc_4ADDBE
+
+        // rejoin with other branch at loc_4ADDBE
     }
 
     // 0x004ADB47
@@ -4357,7 +4470,6 @@ namespace OpenLoco::Vehicles
         {
             loc_4ADB7A_cont();
         }
-
         // loc_4ADDBE
     }
 
