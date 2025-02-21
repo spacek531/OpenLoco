@@ -58,16 +58,17 @@ using namespace OpenLoco::World;
 namespace OpenLoco::Vehicles
 {
 #pragma pack(push, 1)
-    struct unk_4F6F8E
+    struct unk_trackReversingData
     {
-        uint16_t unk_x;
-        uint16_t unk_y;
-        uint16_t unk_z;
-        uint16_t unk_4;
+        int16_t unk_x;
+        int16_t unk_y;
+        int16_t unk_z;
+        int16_t unk_4;
     };
 #pragma pack(pop)
 
-    static loco_global<unk_4F6F8E[0x7F], 0x4F6F8E> _vehicleData_4F6F8E; // some data relating to reversing vehicles
+    static loco_global<unk_trackReversingData[0x7F], 0x4F6F8E> _vehicleData_4F6F8E;  // some data relating to reversing road vehicles
+    static loco_global<unk_trackReversingData[0x1FF], 0x4F7B5E> _vehicleData_4F7B5E; // some data relating to reversing non-road vehicles
     static loco_global<uint32_t, 0x011360D0> _vehicleUpdate_manhattanDistanceToStation;
     static loco_global<VehicleHead*, 0x01136118> _vehicleUpdate_head;
     static loco_global<Vehicle1*, 0x0113611C> _vehicleUpdate_1;
@@ -4011,11 +4012,6 @@ namespace OpenLoco::Vehicles
         return StationId::null;
     }
 
-    constexpr static RoutingHandle combineRoutingHandles(const RoutingHandle a, const RoutingHandle b)
-    {
-        return ((a._data & 0x3F) | (b._data & 0x0FFFFFFC0)) + 1;
-    }
-
     // 0x004ADB47
     void VehicleHead::sub_4ADB47(bool unk)
     {
@@ -4025,28 +4021,34 @@ namespace OpenLoco::Vehicles
         call(0x004ADB47, regs);
     }
 
-    // 0x004ADC9D
-    // esi : this
-    // eax : bool unk_bool
-    void VehicleHead::loc_4ADC9D(bool unk_bool)
+    static VehicleBase* getTail(VehicleBase* veh)
     {
-        // push esi (this)
-
-        // loc_4ADC9E
-        VehicleBase* tailComponent = this;
         do
         {
             // movzx esi, word ptr [esi+3Ah] // next component
             // shl esi, 7
             // add esi, offset things (420h)
-            tailComponent = tailComponent->nextVehicleComponent();
+            veh = veh->nextVehicleComponent();
             // cmp byte ptr [esi+1], 6
             // jnz short loc_4ADC9E
-            if (tailComponent->getSubType() == VehicleEntityType::tail)
+            if (veh->getSubType() == VehicleEntityType::tail)
             {
                 break;
             }
-        } while (tailComponent != nullptr);
+        } while (veh != nullptr);
+
+        return veh;
+    }
+
+    // 0x004ADC9D
+    // esi : this
+    // eax : bool unk_bool
+    void VehicleHead::loc_4ADC9D()
+    {
+        // push esi (this)
+
+        // loc_4ADC9E
+        VehicleBase* tailComponent = getTail(this);
 
         // nullptr check added
         if (tailComponent == nullptr)
@@ -4145,20 +4147,7 @@ namespace OpenLoco::Vehicles
 
         // loc_4ADD38
         // Why are we doing this a second time?
-        VehicleBase* realTailComponent = tailTailTailComponent;
-        do
-        {
-            // movzx esi, word ptr [esi+3Ah] // next component
-            // shl esi, 7
-            // add esi, offset things (420h)
-            realTailComponent = realTailComponent->nextVehicleComponent();
-            // cmp byte ptr [esi+1], 6
-            // jnz short loc_4ADC9E
-            if (realTailComponent->getSubType() == VehicleEntityType::tail)
-            {
-                break;
-            }
-        } while (realTailComponent != nullptr);
+        VehicleBase* realTailComponent = getTail(tailTailTailComponent);
 
         // nullptr check added
         if (realTailComponent == nullptr)
@@ -4240,8 +4229,7 @@ namespace OpenLoco::Vehicles
             // loc_4ADD9D
             // and  ax, 0BFFFh
             ax &= 0xBFFF;
-            // mov [ebp + ebx * 2 ], ax
-            // I HAVE NO IDEA!!!
+            // mov [ebp + ebx * 2 ], ax // I have no idea what this syntax means???
 
             // inc ebx
             // add ecx, 2
@@ -4257,6 +4245,66 @@ namespace OpenLoco::Vehicles
         }
     }
 
+    void VehicleHead::loc_4ADB7A_cont()
+    {
+        // push esi
+
+        // loc_4ADB85
+        VehicleBase* tailComponent = getTail(this);
+
+        // loc_4ADB85 cont.
+        // movzx ebp, word ptr [esi + 36h] // routing handle
+        auto tailRoutingHandle = tailComponent->getRoutingHandle();
+        // mov   ax, esi+30h // tileX
+        // mov   cx, esi+32h // tileY
+        // movzx dx, byte ptr esi+34h // tileBaseZ
+        // shl dx 2
+        auto location = tailComponent->getTrackLoc();
+        location.z *= 4;
+        // mov bl, [esi + 21h]
+        // mov bh, [esi + 35h]
+        auto bl = owner; //  why does non-road care about owner?
+        auto bh = getTrackType();
+
+        // loc_4ADBB3
+        for (;;)
+        {
+            // push ebp (routing handle)
+            // movzx ebp, word_96885C[ebp*2]
+            auto route = RoutingManager::getRouting(tailRoutingHandle);
+            auto routeMasked = route & 0x1FF;
+            auto bp_TAndD = TrackAndDirection::_TrackAndDirection(0, routeMasked);
+            // test ebp, 8000h
+            // jz short loc_4ADBD1
+            if (route & 0x8000)
+            {
+                // loc_4ADBB3 cont.
+                // and ebp, 1FFh
+                route = routeMasked;
+                // xor edi, edi // edi should be nothing?
+                // call sub_489643F
+                // is this SetSignalState or GetSignalState? what are the registers and returns of these functions???
+                route = getSignalState(location, bp_TAndD, bh, 0); // I don't know what the flags are
+            }
+            // loc_4ADBD1
+            // and ebp, 1FFh
+            route &= 0x1FF;
+            // add ax, ds:word_4F7B5E[ebp*8]
+            // add cx, ds:word_4F7B60[ebp*8]
+            // add dx, ds:word_4F7B62[ebp*8]
+            auto locationOffset = _vehicleData_4F7B5E[route];
+            location += Pos3(locationOffset.unk_x, locationOffset.unk_y, locationOffset.unk_z);
+            // pop ebp // routing handle
+            // mov edi, ebp
+            // inc ebp
+            // and ebp, 3Fh
+            // and edi, 0x0FFFFFFC0h
+            // or ebp, edi
+            // cmp word_96885C[ebp*2], 0xFFFEh
+            // jnz short loc_4ADBB3
+        }
+    }
+
     // 0x004ADB47
     void VehicleHead::checkIfReversible(bool unk_bool)
     {
@@ -4264,7 +4312,7 @@ namespace OpenLoco::Vehicles
         // mov dword_1136142, eax
         // push esi
 
-        _vehicleUpdate_var_1136142 = unk_bool;
+        _vehicleUpdate_var_1136142 = unk_bool; // set and read in this subroutine
 
         // loc_4ADB4D
 
@@ -4303,8 +4351,14 @@ namespace OpenLoco::Vehicles
         // jz loc_4ADC9D
         if (getTransportMode() == TransportMode::road)
         {
-            loc_4ADC9D(unk_bool);
+            loc_4ADC9D();
         }
+        else
+        {
+            loc_4ADB7A_cont();
+        }
+
+        // loc_4ADDBE
     }
 
     // 0x004BADE4

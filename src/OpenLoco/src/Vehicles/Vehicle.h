@@ -418,7 +418,8 @@ namespace OpenLoco::Vehicles
         bool sub_4A8F22();
         bool sub_4A8CB6();
         bool sub_4A8C81();
-        void loc_4ADC9D(bool unk_bool);
+        void loc_4ADC9D();
+        void loc_4ADB7A_cont();
         bool landTryBeginUnloading();
         bool landLoadingUpdate();
         bool landNormalMovementUpdate();
