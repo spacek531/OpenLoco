@@ -394,6 +394,7 @@ namespace OpenLoco::Vehicles
         void sub_4AD778();
         void sub_4AD93A();
         void sub_4ADB47(bool unk);
+        void checkIfReversible(bool unk_bool);
         uint32_t getCarCount() const;
         void applyBreakdownToTrain();
         void sub_4AF7A4();
@@ -417,6 +418,7 @@ namespace OpenLoco::Vehicles
         bool sub_4A8F22();
         bool sub_4A8CB6();
         bool sub_4A8C81();
+        void loc_4ADC9D(bool unk_bool);
         bool landTryBeginUnloading();
         bool landLoadingUpdate();
         bool landNormalMovementUpdate();
