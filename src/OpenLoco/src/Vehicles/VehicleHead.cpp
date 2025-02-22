@@ -75,10 +75,10 @@ namespace OpenLoco::Vehicles
     static loco_global<Vehicle2*, 0x01136120> _vehicleUpdate_2;
     static loco_global<VehicleBogie*, 0x01136124> _vehicleUpdate_frontBogie;
     static loco_global<VehicleBogie*, 0x01136128> _vehicleUpdate_backBogie;
-    static loco_global<int32_t, 0x0113612C> _vehicleUpdate_var_113612C; // Speed
-    static loco_global<int32_t, 0x01136130> _vehicleUpdate_var_1136130; // Speed
-    static loco_global<int32_t, 0x01136142> _vehicleUpdate_var_1136142; // just a bool?
-    static loco_global<int32_t, 0x1136176> _vehicleUpdate_var_1136176;
+    static loco_global<int32_t, 0x0113612C> _vehicleUpdate_var_113612C;     // Speed
+    static loco_global<int32_t, 0x01136130> _vehicleUpdate_var_1136130;     // Speed
+    static loco_global<int32_t, 0x01136142> _vehicleUpdate_var_1136142;     // just a bool?
+    static loco_global<uint16_t[64], 0x1136176> _vehicleUpdate_var_1136176; // array of routings
     static loco_global<int16_t, 0x01136168> _vehicleUpdate_targetZ;
     static loco_global<uint16_t, 0x01136458> _1136458; // Actually just a bool
     static loco_global<Status, 0x0113646C> _vehicleUpdate_initialStatus;
@@ -4043,41 +4043,31 @@ namespace OpenLoco::Vehicles
     // 0x004ADC9D
     void VehicleHead::loc_4ADC9D()
     {
-        // push esi (this)
 
-        // loc_4ADC9E
-        // movzx esi, word ptr [esi+3Ah]
-        // shl esi, 7
-        // add esi, offset things
-        // cmp byte ptr [esi+1], 6
-        // jnz short loc_4ADC9E
-        VehicleBase* tailComponent = getTail(this);
+        Vehicle train(*this->asBase<VehicleHead>());
 
-        // nullptr check added
-        if (tailComponent == nullptr)
-        {
-            return;
-        }
-
+        auto tailComponent = *train.tail;
         // loc_4ADC9E cont.
 
         // movzx ebp, word ptr [esi + 36h] // routing handle
-        auto tailRoutingHandle = tailComponent->getRoutingHandle();
+        auto tailRoutingHandle = tailComponent.getRoutingHandle();
         // mov   ax, esi+30h // tileX
         // mov   cx, esi+32h // tileY
         // movzx dx, byte ptr esi+34h // tileBaseZ
-        // shl dx 2 // canceled out below
-        auto location = tailComponent->getTrackLoc();
+        // shl dx 2
+        auto location = tailComponent.getTrackLoc();
 
+        // find the first unallocated routing handle?
+        // why does it add to position?
         // loc_4ADCC6
         for (;;)
         {
-            // push ebp // (handle, this)
+            // push ebp // (handle, currentVehicle)
             // mov bp, word_96885C[ebp*2]
             // and ebp, 1FFh
             auto route = RoutingManager::getRouting(tailRoutingHandle);
             auto routeMasked = route & 0x1FF;
-            auto bp_TAndD = TrackAndDirection::_RoadAndDirection(0, routeMasked);
+            auto bp_TAndD = TrackAndDirection::_RoadAndDirection(routeMasked >> 3, routeMasked & 0x7); // ebp
 
             // push eax // (tileX, handle, this)
             // push ecx // (tileY, tileX, handle, this)
@@ -4086,7 +4076,7 @@ namespace OpenLoco::Vehicles
 
             // shr dx, 2 // canceled out above
             // call VehicleBase::sub_47D959
-            sub_47D959(location, bp_TAndD, routeMasked & 0x100);
+            tailComponent.sub_47D959(location, bp_TAndD, false);
 
             // pop ebp // trackAndDirectionMasked
             // pop edx // tileZ (ignores dh from sub_47D959)
@@ -4099,20 +4089,20 @@ namespace OpenLoco::Vehicles
             // add ax, ds:word_4F6F8E[ebp*8]
             // add cx, ds:word_4F6F90[ebp*8]
             // add dx, ds:word_4F6F92[ebp*8]
-            auto locationOffset = _vehicleData_4F6F8E[routeMasked];
-            location += Pos3(locationOffset.unk_x, locationOffset.unk_y, locationOffset.unk_z);
+            auto unkRoad = TrackData::getUnkRoad(routeMasked);
+            location += unkRoad.pos;
 
             // pop ebp // handle
-            // // stack: (this)
+            // // stack: (currentVehicle)
             // mov edi, ebp
             // inc ebp
             // and ebp, 35h
             // and edi, 0FFFFFFC0h
             // or ebp, edi
-            auto combinedRoutingHandle = RoutingHandle(tailRoutingHandle.getVehicleRef(), tailRoutingHandle.getIndex() + 1);
+            tailRoutingHandle = RoutingHandle(tailRoutingHandle.getVehicleRef(), (tailRoutingHandle.getIndex() + 1) % Limits::kMaxRoutingsPerVehicle);
             // cmp word_96885C[ebp*2], 0FFFEh
             // jnz short loc_4ADCC6
-            if (RoutingManager::getRouting(combinedRoutingHandle) == RoutingManager::kAllocatedButFreeRoutingStation)
+            if (RoutingManager::getRouting(tailRoutingHandle) == RoutingManager::kAllocatedButFreeRoutingStation)
             {
                 break;
             }
@@ -4126,10 +4116,10 @@ namespace OpenLoco::Vehicles
         // movzx esi, word ptr [esi+3Ah] // next component
         // shl esi, 7
         // add esi, offset things
-        auto tailTailComponent = tailComponent->nextVehicleComponent(); // get the second bogie of the last Car?
+        auto vehicle_1 = nextVehicleComponent(); // what is Vehicle_1?
 
         // nullptr check added
-        if (tailTailComponent == nullptr)
+        if (vehicle_1 == nullptr)
         {
             return;
         }
@@ -4137,126 +4127,133 @@ namespace OpenLoco::Vehicles
         // movzx esi, word ptr [esi+3Ah] // next component
         // shl esi, 7
         // add esi, offset things
-        auto tailTailTailComponent = tailTailComponent->nextVehicleComponent(); // get the body of the last Car?
+        auto vehicle_2 = vehicle_1->nextVehicleComponent(); // what is Vehicle_2?
 
         // nullptr check added
-        if (tailTailTailComponent == nullptr)
+        if (vehicle_2 == nullptr)
         {
             return;
         }
-
+        // why do we not use the vehicle head's routing handle?
         // movzx ebp, word ptr [esi+36h]
-        auto tailTailTailRoutingHandle = tailTailTailComponent->getRoutingHandle();
+        auto vehicle_2RouteHandle = vehicle_2->getRoutingHandle(); // ebp
 
         // loc_4ADD38
-        // Why are we doing this a second time?
-        VehicleBase* realTailComponent = getTail(tailTailTailComponent);
+        // get tail again
 
-        // nullptr check added
-        if (realTailComponent == nullptr)
-        {
-            return;
-        }
+        // movzx esi, word ptr [esi+3Ah]
+        // shl esi, 7
+        // add esi, offset things
+        // cmp byte ptr [esi+1], 6
+        // jnz short loc_4ADD38
 
         // loc_4ADD38 cont.
 
         // mov cx, [esi + 36h] // routing handle, overwrite tileY
         // and cx, 3Fh
-        auto realTailRouteHandleIndex = realTailComponent->getRoutingHandle().getIndex();
+        auto tailRouteHandleIndex = tailRoutingHandle.getIndex(); // cx
         // mov ebx, ebp
+        uint8_t routeHandleIndex = vehicle_2RouteHandle.getIndex(); // ebx, masked with 63 later
         // and ebp, 0FFFFFFC0h
-        // shl ebp, 1
-        auto tailTailTailRouteHandleVehicleRef2 = tailTailTailRoutingHandle.getVehicleRef();
-        tailTailTailRouteHandleVehicleRef2 <<= 1;
-        // add ebp, offset word_96885C
-        tailTailTailRouteHandleVehicleRef2 += RoutingManager::getRouting(RoutingHandle(0)); // Redo this for C++, writing the routing
-        // mov edi, offset unk_1136176
-        int32_t edi = _vehicleUpdate_var_1136176; // what is this value?
+        auto vehicle_2VehicleRef = vehicle_2RouteHandle.getVehicleRef(); // ebp
 
-        auto swapRoutingHandle = tailTailTailRoutingHandle;
-        // loc_4ADD65
+        // this offsets ebp to index 0 of that vehicle's routings
+        // shl ebp, 1
+        // add ebp, offset word_96885C
+
+        // mov edi, offset unk_1136176 // swap array, I think
+        sfl::static_vector<uint16_t, Limits::kMaxRoutingsPerVehicle> swapRoutings{};
+        //  loc_4ADD65
         for (;;)
         {
-            // and ebx, 3Fh
-            auto tailTailTailRouteHandleIndex = swapRoutingHandle.getIndex();
+            // and ebx, 3Fh // moved below loc_4ADD65 cont.
 
+            // get route
             // mov ax, [ebp + ebx * 2 + 0] // overwrite tileX
-            // mov [edi], ax
-            // add edi, 2
-            uint16_t ax = tailTailTailRouteHandleVehicleRef2 + tailTailTailRouteHandleIndex * 2; // what is this???
-            _vehicleUpdate_var_1136176 = ax; // where is this read?
-            edi = ax + 2; // why add 2?
+            // mov [edi], ax // write ax to the memory referenced by edi
+            uint16_t ax = RoutingManager::getRouting(RoutingHandle(vehicle_2VehicleRef, routeHandleIndex));
+            swapRoutings.push_back(ax);
+            // add edi, 2 // increment edi by one word. Represents amount of data written to swap array
 
             // cmp bx, cx
             // jz short loc_4ADD7B
-            if (tailTailTailRouteHandleIndex == realTailRouteHandleIndex)
+            if (routeHandleIndex == tailRouteHandleIndex)
             {
                 break;
             }
 
             // loc_4ADD65 cont.
             // dec ebx
-            swapRoutingHandle._data--; // write only one side of the routes?
+            routeHandleIndex--; // intentional underflow?
+            routeHandleIndex &= Limits::kMaxOrdersPerVehicle;
             // jmp short_loc 4ADD65
         }
-
+        /*
+        // store the route handles in reverse order
+        for (auto routeHandleIndex = tailTailTailRoutingHandle.getIndex() + Limits::kMaxRoutingsPerVehicle; routeHandleIndex >= realTailRouteHandleIndex; routeHandleIndex--)
+        {
+            auto routingIndex = routeHandleIndex % Limits::kMaxRoutingsPerVehicle;
+            swapRoutings.push_back(RoutingManager::getRouting(RoutingHandle(tailTailTailRouteHandleVehicleRef2, routingIndex)));
+        }
+        */
         // loc_4ADD7B
         // xor ebx, ebx
-        int32_t ebx = 0;
-        // mov ecx, offset unk_1136176
-        int32_t ecx = _vehicleUpdate_var_1136176;
-        for (;;)
+        uint8_t ebx = 0;
+        // mov ecx, offset unk_1136176 // setting ecx to the start of the swap array
+        // Already established that routings can be converted into _RoadAndDirection
+        for (ebx; ebx < swapRoutings.size(); ebx++)
         {
             // loc_4ADD82
             // mov  ax, [ecx]
             // xor  ax, 48h
-            int32_t ax = ecx ^ 0x48;
+            uint16_t ax = swapRoutings[ebx];
+            ax ^= 0x48; // 0b 0100 1000 flip first and last bits of _RoadAndDirection Id?
 
             // test ax, 100h
             // jz   short loc_4ADD9D
-            if (ax & 0x100)
+            if (ax & TrackAndDirection::unk8Flag)
             {
                 // loc_4ADD82 cont.
                 // xor  ax, 80h
                 // test ax, 80h
                 // jnz  short loc_4ADD9D
-                ax ^= 0x80;
-                if ((ax & 0x80) == 0)
+                ax ^= TrackAndDirection::isBackToFrontFlag;
+                if ((ax & TrackAndDirection::isBackToFrontFlag) == 0)
                 {
                     // loc_4ADD82 cont.
                     // xor  ax, 100h
-                    ax ^= 0x100;
+                    ax ^= TrackAndDirection::unk8Flag;
                 }
             }
 
             // loc_4ADD9D
             // and  ax, 0BFFFh
-            ax &= 0xBFFF;
-
+            ax &= 0xBFFF; // 1011 1111 1111 1111 what is in that bit?
             // mov [ebp + ebx * 2 ], ax // write to the routing array
-            // TODO: figure out the C++ way of doing this
+            RoutingManager::setRouting(RoutingHandle(vehicle_2VehicleRef, ebx), ax);
 
             // inc ebx
             // add ecx, 2
-            ebx++;
-            ecx += 2;
 
-            // cmp ecx, edi
+            // cmp ecx, edi // ebx is the current index of routes swapped
             // jb short loc_4ADD82
-            if (ecx >= edi)
-            {
-                break;
-            }
         }
 
-        // loc_4ADDAE // write sentinel value to up to the last routing handle
+        // loc_4ADDAE
+        // write sentinel value to up to the last routing handle
+
         // cmp ebx, 40h
         // jnb short loc_4ADDBD
 
         // loc_4ADDAE cont.
-        // mov word ptr [ebp+ex*2+0], 0FFFEh
+        // mov word ptr [ebp+ebx*2+0], 0FFFEh
         // inc ebx
         // jmp short loc_4ADDAE
+
+        for (ebx; ebx < Limits::kMaxRoutingsPerVehicle; ebx++)
+        {
+            RoutingManager::setRouting(RoutingHandle(vehicle_2VehicleRef, ebx), RoutingManager::kAllocatedButFreeRoutingStation);
+        }
 
         // loc_4ADDBD
         // pop esi
@@ -4264,26 +4261,28 @@ namespace OpenLoco::Vehicles
         // rejoin with other branch at loc_4ADDBE
     }
 
-    void VehicleHead::loc_4ADB7A_cont()
+    void VehicleHead::loc_4ADB85_cont()
     {
+
+        Vehicle train(*this->asBase<VehicleHead>());
+
+        auto tailComponent = *train.tail;
         // push esi
 
         // loc_4ADB85
-        VehicleBase* tailComponent = getTail(this);
 
         // loc_4ADB85 cont.
         // movzx ebp, word ptr [esi + 36h] // routing handle
-        auto tailRoutingHandle = tailComponent->getRoutingHandle();
+        auto tailRoutingHandle = tailComponent.getRoutingHandle();
         // mov   ax, esi+30h // tileX
         // mov   cx, esi+32h // tileY
         // movzx dx, byte ptr esi+34h // tileBaseZ
         // shl dx 2
-        auto location = tailComponent->getTrackLoc();
-        location.z *= 4;
+        auto location = tailComponent.getTrackLoc();
         // mov bl, [esi + 21h]
         // mov bh, [esi + 35h]
-        auto bl = owner; //  why does non-road care about owner?
-        auto bh = getTrackType();
+        auto bl = tailComponent.owner; //  why does rail care about owner?
+        auto bh = tailComponent.getTrackType();
 
         // loc_4ADBB3
         for (;;)
@@ -4292,7 +4291,7 @@ namespace OpenLoco::Vehicles
             // movzx ebp, word_96885C[ebp*2]
             auto route = RoutingManager::getRouting(tailRoutingHandle);
             auto routeMasked = route & 0x1FF;
-            auto bp_TAndD = TrackAndDirection::_TrackAndDirection(0, routeMasked);
+            auto bp_TAndD = TrackAndDirection::_TrackAndDirection(routeMasked >> 3, routeMasked & 0x7); // ebp
             // test ebp, 8000h
             // jz short loc_4ADBD1
             if (route & 0x8000)
@@ -4303,7 +4302,7 @@ namespace OpenLoco::Vehicles
                 // xor edi, edi // edi should already be nothing?
                 // call sub_489643F
                 // is this SetSignalState or GetSignalState? what are the registers and returns of these functions???
-                route = getSignalState(location, bp_TAndD, bh, 0); // I don't know what the flags are. I am just guessing that it uses ebp as the return register.
+                route = getSignalState(location, bp_TAndD, bh, 0); // I don't know what the flags are. I am just guessing that it uses ebp as the return register. I think this takes bigZ?
             }
             // loc_4ADBD1
             // and ebp, 1FFh
@@ -4311,16 +4310,22 @@ namespace OpenLoco::Vehicles
             // add ax, ds:word_4F7B5E[ebp*8]
             // add cx, ds:word_4F7B60[ebp*8]
             // add dx, ds:word_4F7B62[ebp*8]
-            auto locationOffset = _vehicleData_4F7B5E[route];
-            location += Pos3(locationOffset.unk_x, locationOffset.unk_y, locationOffset.unk_z);
+            location += TrackData::getUnkTrack(route).pos;
             // pop ebp // routing handle
+            // stack: (currentVehicle)
             // mov edi, ebp
             // inc ebp
             // and ebp, 3Fh
             // and edi, 0x0FFFFFFC0h
             // or ebp, edi
+            tailRoutingHandle = RoutingHandle(tailRoutingHandle.getVehicleRef(), (tailRoutingHandle.getIndex() + 1) % Limits::kMaxRoutingsPerVehicle);
             // cmp word_96885C[ebp*2], 0xFFFEh
             // jnz short loc_4ADBB3
+            if (RoutingManager::getRouting(tailRoutingHandle) == RoutingManager::kAllocatedButFreeRoutingStation)
+            {
+                break;
+            }
+            break;
         }
 
         // loc_4ADBD1 cont.
@@ -4330,10 +4335,10 @@ namespace OpenLoco::Vehicles
         // movzx esi, word ptr [esi+3Ah]
         // shl esi, 7
         // add esi, offset things
-        auto tailTailComponent = tailComponent->nextVehicleComponent(); // get the second bogie of the last Car?
+        auto vehicle_1 = nextVehicleComponent(); // what is vehicle_1?
 
         // nullptr check added
-        if (tailTailComponent == nullptr)
+        if (vehicle_1 == nullptr)
         {
             return;
         }
@@ -4341,66 +4346,91 @@ namespace OpenLoco::Vehicles
         // movzx esi, word ptr [esi+3Ah]
         // shl esi, 7
         // add esi, offset things
-        auto tailTailTailComponent = tailTailComponent->nextVehicleComponent(); // get the body of the last Car?
+        auto vehicle_2 = vehicle_1->nextVehicleComponent(); // what is vehicle_2?
 
         // nullptr check added
-        if (tailTailTailComponent == nullptr)
+        if (vehicle_2 == nullptr)
         {
             return;
         }
 
         // movzx ebp, word ptr [esi+36h]
-        auto tailTailTailRoutingHandle = tailTailTailComponent->getRoutingHandle();
+        auto vehicle_2RouteHandle = vehicle_2->getRoutingHandle();
 
         // loc_4ADC26
-        // Why are we doing this a second time?
+        // get tail again
+
         // movzx esi, word ptr [esi+3Ah]
         // shl esi, 7
         // add esi, offset things
         // cmp byte ptr [esi+1], 6
         // jnz short loc_4ADC26
-        VehicleBase* realTailComponent = getTail(tailTailTailComponent);
-
-        // nullptr check added
-        if (realTailComponent == nullptr)
-        {
-            return;
-        }
 
         // loc_4ADC26 cont.
-        // mov cx, [esi+36h]
+
+        // mov cx, [esi + 36h] // routing handle, overwrite tileY
         // and cx, 3Fh
+        auto tailRouteHandleIndex = tailRoutingHandle.getIndex(); // cx
         // mov ebx, ebp
+        uint8_t routeHandleIndex = vehicle_2RouteHandle.getIndex(); // ebx, masked with 63 later
         // and ebp, 0FFFFFFC0h
+        auto vehicle_2VehicleRef = vehicle_2RouteHandle.getVehicleRef(); // ebp
+
+        // this offsets ebp to index 0 of that vehicle's routings
         // shl ebp, 1
-        // add ebp, offset word_96885C // get the start of the route array
-        // mov edi, offset unk_1136176
+        // add ebp, offset word_96885C
 
-        // loc_4ADC53
-        // and ebx, 3Fh
-        // mov ax, [ebp + ebx *2]
-        // mov [edi], ax
-        // add edi, 2
-        // cmp bx, cx
-        // jz short loc_4ADC69
+        // mov edi, offset unk_1136176 // swap array, I think
+        sfl::static_vector<uint16_t, Limits::kMaxRoutingsPerVehicle> swapRoutings{};
+        //  loc_4ADD65
+        for (;;)
+        {
+            // and ebx, 3Fh // moved below loc_4ADC53 cont.
 
-        // loc_4ADC53 cont.
-        // dec ebx
-        // jmp short loc_4ADC53
+            // get route
+            // mov ax, [ebp + ebx * 2 + 0] // overwrite tileX
+            // mov [edi], ax // write ax to the memory referenced by edi
+            uint16_t ax = RoutingManager::getRouting(RoutingHandle(vehicle_2VehicleRef, routeHandleIndex));
+            swapRoutings.push_back(ax);
+            // add edi, 2 // increment edi by one word. Represents amount of data written to swap array
 
+            // cmp bx, cx
+            // jz short loc_4ADC69
+            if (routeHandleIndex == tailRouteHandleIndex)
+            {
+                break;
+            }
+
+            // loc_4ADD65 cont.
+            // dec ebx
+            routeHandleIndex--; // intentional underflow?
+            routeHandleIndex &= Limits::kMaxOrdersPerVehicle;
+            // jmp short_loc 4ADD65
+        }
         // loc_4ADC69
         // xor ebx, ebx
+        uint8_t ebx = 0;
         // mov ecx, offset unk_1136176
+        // Already established that routings can be converted into _RoadAndDirection
+        for (ebx; ebx < swapRoutings.size(); ebx++)
+        {
+            // loc_4ADC70
+            // mov  ax, [ecx]
+            // xor  ax, 4
+            uint16_t ax = swapRoutings[ebx];
+            ax ^= TrackAndDirection::reversedFlag; // flip reversed bit
 
-        // loc_4ADC70
-        // mov ax, [ecx]
-        // xor ax, 4
-        // and ax, 0BFFFh
-        // mov [ebp+ebx*2,0], ah
-        // inc ebx
-        // add ecx, 2
-        // cmp ecx, edi
-        // jb short loc_4ADC70
+            // and  ax, 0BFFFh
+            ax &= 0xBFFF; // 1011 1111 1111 1111 what is in that bit?
+            // mov [ebp + ebx * 2 ], ax // write to the routing array
+            RoutingManager::setRouting(RoutingHandle(vehicle_2VehicleRef, ebx), ax);
+
+            // inc ebx
+            // add ecx, 2
+
+            // cmp ecx, edi // ebx is the current index of routes swapped
+            // jb short loc_4ADC70
+        }
 
         // loc 4ADC88
         // cmp ebx, 40h // 64
@@ -4410,6 +4440,11 @@ namespace OpenLoco::Vehicles
         // mov word ptr [ebp+ebx*2], 0FFFEh
         // inc ebx
         // jmp short loc_4ADC88
+
+        for (ebx; ebx < Limits::kMaxRoutingsPerVehicle; ebx++)
+        {
+            RoutingManager::setRouting(RoutingHandle(vehicle_2VehicleRef, ebx), RoutingManager::kAllocatedButFreeRoutingStation);
+        }
 
         // loc_4ADC97
         // pop esi
@@ -4423,31 +4458,27 @@ namespace OpenLoco::Vehicles
     {
         // loc_4ADB47
         // mov dword_1136142, eax
-        // push esi
+        // push esi (this)
 
         _vehicleUpdate_var_1136142 = unk_bool; // set and read in this subroutine
 
         // loc_4ADB4D
+        // invalidate every component in the train
 
-        VehicleBase* b = this;
-        do
-        {
-            // call EntityBase::invalidateSprite
-            // mov si, [esi+3Ah] // next vehicle
-            // cmp si, 0xFFFFh
-            // jz short loc_4ADB6A
-            b->invalidateSprite();
-
-            // loc_4ADB4D cont.
-            // movzx esi, si
-            // shl esi, 7
-            // add esi, offset things
-            // jmp short loc_4ADB4D
-            b = b->nextVehicleComponent();
-        } while (b != nullptr);
+        // call EntityBase::invalidateSprite
+        // mov si, [esi+3Ah] // next vehicle
+        // cmp si, 0xFFFFh
+        // jz short loc_4ADB6A
+        // loc_4ADB4D cont.
+        // movzx esi, si
+        // shl esi, 7
+        // add esi, offset things
+        // jmp short loc_4ADB4D
+        Vehicle train(*this->asBase<VehicleHead>());
+        train.applyToComponents([](auto& component) { component.invalidateSprite(); });
 
         // loc_4ADB6A
-        // pop esi
+        // pop esi // this
         // call VehicleHead::sub_4AD778
         sub_4AD778();
         // cmp byte ptr [esi+5Dh], 4
@@ -4459,16 +4490,43 @@ namespace OpenLoco::Vehicles
             status = Status::travelling;
         }
 
+        // nullptr check added
+        if (train.tail == nullptr)
+        {
+            return;
+        }
+
         // loc_4ADB7A
         // cmp byte ptr [esi+42h], 1
         // jz loc_4ADC9D
         if (getTransportMode() == TransportMode::road)
         {
+            // push esi (vehicleHead)
+
+            // loc_4ADC9E
+            // get the tail component of the bus/truck/tram
+
+            // movzx esi, word ptr [esi+3Ah]
+            // shl esi, 7
+            // add esi, offset things
+            // cmp byte ptr [esi+1], 6
+            // jnz short loc_4ADC9E
+
             loc_4ADC9D();
         }
         else
         {
-            loc_4ADB7A_cont();
+            // push esi (vehicleHead)
+
+            // loc_4ADB58
+            // get the tail component of the train/other
+
+            // movzx esi, word ptr [esi+3Ah]
+            // shl esi, 7
+            // add esi, offset things
+            // cmp byte ptr [esi+1], 6
+            // jnz short loc_4ADB58
+            loc_4ADB85_cont();
         }
         // loc_4ADDBE
     }

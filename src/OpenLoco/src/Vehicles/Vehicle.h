@@ -147,6 +147,10 @@ namespace OpenLoco::Vehicles
 #pragma pack(push, 1)
     struct TrackAndDirection
     {
+        static constexpr uint16_t directionMask = 0b11;
+        static constexpr uint16_t reversedFlag = (1 << 2);
+        static constexpr uint16_t isBackToFrontFlag = (1 << 7);
+        static constexpr uint16_t unk8Flag = (1 << 8);
         struct _TrackAndDirection
         {
             uint16_t _data;
@@ -155,8 +159,8 @@ namespace OpenLoco::Vehicles
             {
             }
             constexpr uint8_t id() const { return (_data >> 3) & 0x3F; }
-            constexpr uint8_t cardinalDirection() const { return _data & 0x3; }
-            constexpr bool isReversed() const { return _data & (1 << 2); }
+            constexpr uint8_t cardinalDirection() const { return _data & directionMask; }
+            constexpr bool isReversed() const { return _data & reversedFlag; }
             constexpr void setReversed(bool state)
             {
                 _data &= ~(1 << 2);
@@ -172,9 +176,9 @@ namespace OpenLoco::Vehicles
             {
             }
             constexpr uint8_t id() const { return (_data >> 3) & 0xF; }
-            constexpr uint8_t cardinalDirection() const { return _data & 0x3; }
+            constexpr uint8_t cardinalDirection() const { return _data & directionMask; }
             // Used by road and tram vehicles to indicate side
-            constexpr bool isReversed() const { return _data & (1 << 2); }
+            constexpr bool isReversed() const { return _data & reversedFlag; }
             constexpr void setReversed(bool state)
             {
                 _data &= ~(1 << 2);
@@ -182,9 +186,9 @@ namespace OpenLoco::Vehicles
             }
             // Road vehicles are briefly back to front when reaching dead ends
             // Trams can stay back to front
-            constexpr bool isBackToFront() const { return _data & (1 << 7); }
+            constexpr bool isBackToFront() const { return _data & isBackToFrontFlag; }
             // Related to road vehicles turning around
-            constexpr bool isUnk8() const { return _data & (1 << 8); }
+            constexpr bool isUnk8() const { return _data & unk8Flag; }
             constexpr bool operator==(const _RoadAndDirection other) const { return _data == other._data; }
         };
 
@@ -418,8 +422,6 @@ namespace OpenLoco::Vehicles
         bool sub_4A8F22();
         bool sub_4A8CB6();
         bool sub_4A8C81();
-        void loc_4ADC9D();
-        void loc_4ADB7A_cont();
         bool landTryBeginUnloading();
         bool landLoadingUpdate();
         bool landNormalMovementUpdate();
@@ -459,8 +461,9 @@ namespace OpenLoco::Vehicles
         bool sub_4AC1C2();
         bool opposingTrainAtSignal();
         bool sub_4ACCDC();
+        void loc_4ADC9D();
+        void loc_4ADB85_cont();
         StationId manualFindTrainStationAtLocation();
-        bool sub_4BADE4();
         bool isOnExpectedRoadOrTrack();
         VehicleStatus getStatusTravelling() const;
         void getSecondStatus(VehicleStatus& vehStatus) const;
