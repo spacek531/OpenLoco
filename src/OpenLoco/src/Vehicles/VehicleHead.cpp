@@ -4008,25 +4008,6 @@ namespace OpenLoco::Vehicles
         call(0x004ADB47, regs);
     }
 
-    static VehicleBase* getTail(VehicleBase* veh)
-    {
-        do
-        {
-            // movzx esi, word ptr [esi+3Ah] // next component
-            // shl esi, 7
-            // add esi, offset things (420h)
-            veh = veh->nextVehicleComponent();
-            // cmp byte ptr [esi+1], 6
-            // jnz short loc_4ADC9E
-            if (veh->getSubType() == VehicleEntityType::tail)
-            {
-                break;
-            }
-        } while (veh != nullptr);
-
-        return veh;
-    }
-
     // 0x004ADC9D
     void VehicleHead::loc_4ADC9D()
     {
