@@ -63,9 +63,9 @@ namespace OpenLoco::Vehicles
     static loco_global<Vehicle2*, 0x01136120> _vehicleUpdate_2;
     static loco_global<VehicleBogie*, 0x01136124> _vehicleUpdate_frontBogie;
     static loco_global<VehicleBogie*, 0x01136128> _vehicleUpdate_backBogie;
-    static loco_global<int32_t, 0x0113612C> _vehicleUpdate_var_113612C;     // Speed
-    static loco_global<int32_t, 0x01136130> _vehicleUpdate_var_1136130;     // Speed
-    static loco_global<int32_t, 0x01136142> _vehicleUpdate_var_1136142;     // just a bool?
+    static loco_global<int32_t, 0x0113612C> _vehicleUpdate_var_113612C; // Speed
+    static loco_global<int32_t, 0x01136130> _vehicleUpdate_var_1136130; // Speed
+    static loco_global<int32_t, 0x01136142> _vehicleUpdate_var_1136142; // just a bool?
     static loco_global<int16_t, 0x01136168> _vehicleUpdate_targetZ;
     static loco_global<uint16_t, 0x01136458> _1136458; // Actually just a bool
     static loco_global<Status, 0x0113646C> _vehicleUpdate_initialStatus;
@@ -4249,7 +4249,7 @@ namespace OpenLoco::Vehicles
         auto location = tailComponent.getTrackLoc();
         // mov bl, [esi + 21h]
         // mov bh, [esi + 35h]
-        auto bl = tailComponent.owner; //  why does rail care about owner?
+        // auto bl = tailComponent.owner; //  why does rail care about owner? Possibly for getSignalState but the c++ version ignores it
         auto bh = tailComponent.getTrackType();
 
         // loc_4ADBB3
@@ -4270,7 +4270,7 @@ namespace OpenLoco::Vehicles
                 // xor edi, edi // edi should already be nothing?
                 // call sub_489643F
                 // is this SetSignalState or GetSignalState? what are the registers and returns of these functions???
-                route = getSignalState(location, bp_TAndD, bh, 0); // I don't know what the flags are. I am just guessing that it uses ebp as the return register. I think this takes bigZ?
+                route = getSignalState(location, bp_TAndD, bh, 0); // I don't know what the flags are. I am just guessing that it uses ebp as the return register.
             }
             // loc_4ADBD1
             // and ebp, 1FFh
@@ -4497,6 +4497,10 @@ namespace OpenLoco::Vehicles
             loc_4ADB85_cont();
         }
         // loc_4ADDBE
+        _vehicleUpdate_var_1136142 = unk_bool;
+        registers regs;
+        regs.esi = X86Pointer(this);
+        call(0x004ADDBE, regs);
     }
 
     // 0x004BADE4
