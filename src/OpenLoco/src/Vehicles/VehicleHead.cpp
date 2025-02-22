@@ -57,18 +57,6 @@ using namespace OpenLoco::World;
 
 namespace OpenLoco::Vehicles
 {
-#pragma pack(push, 1)
-    struct unk_trackReversingData
-    {
-        int16_t unk_x;
-        int16_t unk_y;
-        int16_t unk_z;
-        int16_t unk_4;
-    };
-#pragma pack(pop)
-
-    static loco_global<unk_trackReversingData[0x7F], 0x4F6F8E> _vehicleData_4F6F8E;  // some data relating to reversing road vehicles
-    static loco_global<unk_trackReversingData[0x1FF], 0x4F7B5E> _vehicleData_4F7B5E; // some data relating to reversing non-road vehicles
     static loco_global<uint32_t, 0x011360D0> _vehicleUpdate_manhattanDistanceToStation;
     static loco_global<VehicleHead*, 0x01136118> _vehicleUpdate_head;
     static loco_global<Vehicle1*, 0x0113611C> _vehicleUpdate_1;
@@ -78,7 +66,6 @@ namespace OpenLoco::Vehicles
     static loco_global<int32_t, 0x0113612C> _vehicleUpdate_var_113612C;     // Speed
     static loco_global<int32_t, 0x01136130> _vehicleUpdate_var_1136130;     // Speed
     static loco_global<int32_t, 0x01136142> _vehicleUpdate_var_1136142;     // just a bool?
-    static loco_global<uint16_t[64], 0x1136176> _vehicleUpdate_var_1136176; // array of routings
     static loco_global<int16_t, 0x01136168> _vehicleUpdate_targetZ;
     static loco_global<uint16_t, 0x01136458> _1136458; // Actually just a bool
     static loco_global<Status, 0x0113646C> _vehicleUpdate_initialStatus;
