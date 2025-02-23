@@ -398,7 +398,8 @@ namespace OpenLoco::Vehicles
         void sub_4AD778();
         void sub_4AD93A();
         void sub_4ADB47(bool unk);
-        void checkIfReversible(bool unk_bool);
+        void shouldChangeDirection();
+        void changeDirection(bool unk_bool);
         uint32_t getCarCount() const;
         void applyBreakdownToTrain();
         void sub_4AF7A4();
@@ -601,8 +602,14 @@ namespace OpenLoco::Vehicles
         int8_t chuffSoundIndex;
         uint32_t creationDay; // 0x56
         uint32_t var_5A;
-        uint8_t wheelSlipping; // 0x5E timeout that counts up
-        BreakdownFlags breakdownFlags;
+        uint8_t wheelSlipping;         // 0x5E timeout that counts up
+        BreakdownFlags breakdownFlags; // 0x5F
+        uint8_t var_60;
+        uint8_t var_61;
+        uint32_t refundCost;         // 0x62 front bogies only
+        uint16_t reliability;        // 0x66 front bogies only
+        uint16_t timeoutToBreakdown; // 0x68 front bogies only (days) counts down to the next breakdown 0xFFFFU disables this
+        uint8_t breakdownTimeout;    // 0x6A front bogies only (days)
 
         const VehicleObject* getObject() const;
         bool update();
@@ -626,7 +633,7 @@ namespace OpenLoco::Vehicles
         Pitch updateSpritePitchSteepSlopes(uint16_t xyOffset, int16_t zOffset);
         Pitch updateSpritePitch(uint16_t xyOffset, int16_t zOffset);
     };
-    static_assert(sizeof(VehicleBody) == 0x60); // Can't use offset_of change this to last field if more found
+    static_assert(sizeof(VehicleBody) == 0x6B); // Can't use offset_of change this to last field if more found
 
     uint8_t calculateYaw0FromVector(int16_t xDiff, int16_t yDiff);
     uint8_t calculateYaw1FromVectorPlane(int16_t xDiff, int16_t yDiff);
@@ -662,8 +669,8 @@ namespace OpenLoco::Vehicles
         uint8_t pad_55;
         uint32_t creationDay; // 0x56
         uint32_t var_5A;
-        uint8_t wheelSlipping; // 0x5E timeout that counts up
-        BreakdownFlags breakdownFlags;
+        uint8_t wheelSlipping;         // 0x5E timeout that counts up
+        BreakdownFlags breakdownFlags; // 0x5F
         uint8_t var_60;
         uint8_t var_61;
         uint32_t refundCost;         // 0x62 front bogies only
@@ -673,6 +680,7 @@ namespace OpenLoco::Vehicles
 
     public:
         AirportObjectFlags getCompatibleAirportType();
+        VehicleBogie* reverseCarAndGetNewFrontBogie();
         bool update();
         bool isOnRackRail();
         constexpr bool hasBreakdownFlags(BreakdownFlags flagsToTest) const

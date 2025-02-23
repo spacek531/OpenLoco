@@ -4081,27 +4081,15 @@ namespace OpenLoco::Vehicles
         // pop esi
         // push esi
 
+        // this gets vehicle_2
         // movzx esi, word ptr [esi+3Ah] // next component
         // shl esi, 7
         // add esi, offset things
-        auto vehicle_1 = nextVehicleComponent(); // what is Vehicle_1?
-
-        // nullptr check added
-        if (vehicle_1 == nullptr)
-        {
-            return;
-        }
-
         // movzx esi, word ptr [esi+3Ah] // next component
         // shl esi, 7
         // add esi, offset things
-        auto vehicle_2 = vehicle_1->nextVehicleComponent(); // what is Vehicle_2?
+        auto vehicle_2 = train.veh2; // what is Vehicle_2?
 
-        // nullptr check added
-        if (vehicle_2 == nullptr)
-        {
-            return;
-        }
         // why do we not use the vehicle head's routing handle?
         // movzx ebp, word ptr [esi+36h]
         auto vehicle_2RouteHandle = vehicle_2->getRoutingHandle(); // ebp
@@ -4183,9 +4171,9 @@ namespace OpenLoco::Vehicles
             {
                 // loc_4ADD82 cont.
                 // xor  ax, 80h
+                ax ^= TrackAndDirection::isBackToFrontFlag;
                 // test ax, 80h
                 // jnz  short loc_4ADD9D
-                ax ^= TrackAndDirection::isBackToFrontFlag;
                 if ((ax & TrackAndDirection::isBackToFrontFlag) == 0)
                 {
                     // loc_4ADD82 cont.
@@ -4300,27 +4288,14 @@ namespace OpenLoco::Vehicles
         // pop esi
         // push esi
 
+        // this gets vehicle_2
         // movzx esi, word ptr [esi+3Ah]
         // shl esi, 7
         // add esi, offset things
-        auto vehicle_1 = nextVehicleComponent(); // what is vehicle_1?
-
-        // nullptr check added
-        if (vehicle_1 == nullptr)
-        {
-            return;
-        }
-
         // movzx esi, word ptr [esi+3Ah]
         // shl esi, 7
         // add esi, offset things
-        auto vehicle_2 = vehicle_1->nextVehicleComponent(); // what is vehicle_2?
-
-        // nullptr check added
-        if (vehicle_2 == nullptr)
-        {
-            return;
-        }
+        auto vehicle_2 = train.veh2; // what is vehicle_2?
 
         // movzx ebp, word ptr [esi+36h]
         auto vehicle_2RouteHandle = vehicle_2->getRoutingHandle();
@@ -4420,9 +4395,169 @@ namespace OpenLoco::Vehicles
 
         // rejoin with other branch at loc_4ADDBE
     }
+    /*
+    static bool shouldFlip(VehicleBase* veh)
+    {
+
+        // loc_4ADDDE
+
+        // movzx edi, word ptr [esi+3Ah]
+        // shl edi, 7
+        // add edi, offset things
+        VehicleBase* secondToLastVehicle; // edi
+        auto lastVehicle = veh->nextVehicleComponent();
+        do
+        {
+            // loc_4ADDEB
+            // get the tail of the train, but store the second-to-last component in ebx AKA THE BODY OF THE LAST CAR I THINK
+            // POSSIBLY THE BOGIE IDK
+            secondToLastVehicle = lastVehicle;
+            lastVehicle = lastVehicle->nextVehicleComponent();
+            // mov ebx, edi
+            // movzx edi, word ptr [edi+3Ah]
+            // shl edi, 7
+            // add edi, offset things
+            // cmp byte ptr [edi+1], 6
+            // jnz short loc_4ADDEB
+        } while (lastVehicle != nullptr && lastVehicle->getSubType() != VehicleEntityType::tail);
+
+        // nullptr check added
+        if (lastVehicle == nullptr)
+        {
+            return false;
+        }
+
+        // loc_4ADDEB cont.
+
+        // movzx ebp, word ptr [ebx+40h]
+        // mov ebp, _vehicleObjects[ebp*4]
+        auto object = secondToLastVehicle->asVehicleBody()->getObject(); // is this right?
+        // test word ptr [ebp+0E0h], 100h
+        // jnz short loc_4ADE8A
+
+        // any returns force the vehicle to flip around
+
+        if (object->hasFlags(VehicleObjectFlags::flag_08))
+        {
+            return false;
+        }
+        // loc_4ADDEB cont.
+
+        // test word ptr[ebp+0E0h], 2
+        // jnz short loc_4ADE36
+        if (!object->hasFlags(VehicleObjectFlags::topAndTailPosition))
+        {
+            // loc_4ADDEB cont.
+            // cmp word ptr [ebp+0D8h], 0
+            // jz short loc_4ADEA8A
+            if (object->power == 0)
+            {
+                return false;
+            }
+            // loc_4ADDEB cont.
+
+            // test word ptr[ebp+0E0h], 20h
+            // jnz short loc_4ADE8A
+            if (object->hasFlags(VehicleObjectFlags::centerPosition))
+            {
+                // not reachable with vanilla objects
+                return false;
+            }
+
+            // TODO: create discussion to add another case here for tender engines
+        }
+
+        return true;
+    }
+    */
+    // regs: esi (this)
+    void VehicleHead::shouldChangeDirection()
+    {
+        /*
+        // loc_4ADDBE cont.
+        // test word ptr[esi+0Ch], 40h // manual driving cheat
+        // jz short loc_4ADDDE
+        // loc_4ADDBE cont.
+
+        // test word ptr [esi+0Ch], 80h // shunting cheat
+        // jnz short loc_4ADE36
+        bool flips = !hasVehicleFlags(VehicleFlags::shuntCheat) && shouldFlip(this);
+
+        if (flips)
+        {
+            return;
+        }
+
+        // loc _4ADE36
+        // if the code reaches this, the vehicle will NOT flip around when it changes direction (which means that the order of vehicles is now reversed)
+        // push esi
+        // mov edi, esi
+
+        // loc_4ADE39
+        // plain jane get the tail component but with edi instead
+        // I won't copy the asm.
+        Vehicle train(*this);
+        auto tail = train.tail->asBase<VehicleBase>(); // edi
+
+        // loc_4ADE39 cont.
+        // get veh1 and veh2
+        // I won't copy the asm.
+        auto vehicle_1 = train.veh1; // esi
+        auto vehicle_2 = train.veh2; // ebp
+        VehicleBase* esi;
+        VehicleBase* epb = vehicle_2; // // not sure if this gets updated
+        for (;;)
+        {
+            // loc_4ADE66
+            // get epb's next component as esi
+            VehicleBase* esi = epb->nextVehicleComponent();
+
+            //nullptr check added
+            if (esi == nullptr)
+            {
+                return;
+            }
+            // cmp edi, esi
+            // jz short loc_4ADE89
+            if (esi = tail)
+            {
+                break;
+            }
+
+            // loc_4ADE66 cont.
+            // push ebp (vehicle_2)
+            // push edi (tail, vehicle_2)
+            // regs: ebp = vehicle_2, edi = tail, esi = current vehicle
+            // call sub_4AFFF3
+
+            // sub_4AFFF3
+            registers regs{};
+            // overwrites ebp
+            // overwrites ecx
+            // uses edi
+            // TODO: replace with my function
+            regs.esi = X86Pointer(&esi);
+            regs.edi = X86Pointer(&tail);
+            call(0x004AFFF3, regs);
+            // pop edi // tail is still good, esi has changed
+            // call sub_4AF4D6
+            
+            // "implemented" but it's just a call to the exe
+            // esi = source
+            // edi = dest
+
+            // mov edi, esi
+            // pop ebp
+            // jmp short loc_4ADE66
+
+            esi = esi->nextVehicleComponent();
+        }
+        // loc_4ADE89
+        */
+    }
 
     // 0x004ADB47
-    void VehicleHead::checkIfReversible(bool unk_bool)
+    void VehicleHead::changeDirection(bool unk_bool)
     {
         // loc_4ADB47
         // mov dword_1136142, eax
@@ -4496,11 +4631,18 @@ namespace OpenLoco::Vehicles
             // jnz short loc_4ADB58
             loc_4ADB85_cont();
         }
+
         // loc_4ADDBE
-        _vehicleUpdate_var_1136142 = unk_bool;
-        registers regs;
-        regs.esi = X86Pointer(this);
-        call(0x004ADDBE, regs);
+
+        // test dword_1136142, 1
+        // jnz loc_4ADE8A
+        if (!unk_bool)
+        {
+            shouldChangeDirection();
+        }
+
+        // loc_4ADE8A
+        // make the vehicle drive the other way I think
     }
 
     // 0x004BADE4
