@@ -721,13 +721,13 @@ namespace OpenLoco::Vehicles
         // movzx esi, word ptr [esi+3Ah]
         // shl esi, 7
         // add esi, offset things
-        VehicleBogie* frontBogieOfNextVehicle = firstBody->nextVehicleComponent()->asBase<VehicleBogie>(); // esi
+        VehicleBogie* frontBogieOfNextComponent = firstBody->nextVehicleComponent()->asBase<VehicleBogie>(); // esi
 
         // loc_4B0038
 
         // cmp bypte ptr [esi+1], 3
         // jnz short loc_4B0091
-        while (frontBogieOfNextVehicle->getSubType() == VehicleEntityType::bogie)
+        while (frontBogieOfNextComponent->getSubType() == VehicleEntityType::bogie)
         {
             // loc_4B0038 cont.
 
@@ -740,23 +740,23 @@ namespace OpenLoco::Vehicles
 
             // cmp bypte ptr [edi+1], 4
             // jz short loc_4B0091
-            if (frontBogieOfNextVehicle->nextVehicleComponent()->nextVehicleComponent()->getSubType() == VehicleEntityType::body_start)
+            if (frontBogieOfNextComponent->nextVehicleComponent()->nextVehicleComponent()->getSubType() == VehicleEntityType::body_start)
             {
-                // what would cause it to reach this?
+                // if the car associated with the first bogie of the next vehicle is a body_start, this first bogie is of the next vehicle
                 break;
             }
             // push esi
-            stack.push_back(frontBogieOfNextVehicle);
+            stack.push_back(frontBogieOfNextComponent);
             // movzx edi, word ptr [esi+3Ah]
             // shl edi, 7
             // add edi, offset things
-            VehicleBogie* rearBogieOfNextVehicle = frontBogieOfNextVehicle->nextVehicleComponent()->asBase<VehicleBogie>();
+            VehicleBogie* rearBogieOfNextVehicle = frontBogieOfNextComponent->nextVehicleComponent()->asBase<VehicleBogie>();
 
             // mov al, [esi+39h]
             // xchg al, [edi+39h]
             // mov [esi+39h], al
-            spriteTypeSwap = frontBogieOfNextVehicle->objectSpriteType;
-            frontBogieOfNextVehicle->objectSpriteType = rearBogieOfNextVehicle->objectSpriteType;
+            spriteTypeSwap = frontBogieOfNextComponent->objectSpriteType;
+            frontBogieOfNextComponent->objectSpriteType = rearBogieOfNextVehicle->objectSpriteType;
             rearBogieOfNextVehicle->objectSpriteType = spriteTypeSwap;
 
             // movzx edi, word ptr [edi+3Ah]
@@ -765,16 +765,18 @@ namespace OpenLoco::Vehicles
             // movzx esi, word ptr [edi+3Ah]
             // shl esi, 7
             // add esi, offset things
-            frontBogieOfNextVehicle = rearBogieOfNextVehicle->nextVehicleComponent()->nextVehicleComponent()->asBase<VehicleBogie>();
+            frontBogieOfNextComponent = rearBogieOfNextVehicle->nextVehicleComponent()->nextVehicleComponent()->asBase<VehicleBogie>();
             // jmp short loc_4B0038
         }
 
         // loc_4B0091
-        // mov ecx, esi // the end of the train (?) is in ecx
+        // Get the vehicle before the first bogie of this Car. Is either a Body or a Vehicle_2
+
+        // mov ecx, esi // the end of the Car (?) is in ecx
         // movzx edi, word ptr [esi+26h] // head of train
         // shl edi, 7
         // add edi, offset things
-        VehicleBogie* edi = EntityManager::get<VehicleBase>(getHead())->asBase<VehicleBogie>();
+        VehicleCommon* componentAhead = EntityManager::get<VehicleBase>(getHead())->asBase<VehicleCommon>();
 
         // loc_4B00A0
 
@@ -783,13 +785,13 @@ namespace OpenLoco::Vehicles
         // add ebx, offset things
         // cmp ebx, ebp
         // jz short loc_4B00B5
-        while (edi->nextVehicleComponent() != this)
+        while (componentAhead->nextVehicleComponent() != this)
         {
 
             // loc_4B00A0 cont.
             // mov edi, ebx
             // jmp short loc_4B00A0
-            edi = edi->nextVehicleComponent()->asBase<VehicleBogie>();
+            componentAhead = componentAhead->nextVehicleComponent()->asBase<VehicleCommon>();
         }
 
         // loc_4B00B5
@@ -801,6 +803,7 @@ namespace OpenLoco::Vehicles
         // cmp ebx, 0FFFFFFFFh
         // jz short loc_4B00F4
 
+        // iterate through the Car's bogies in reverse order
         for (int32_t i = stack.size() - 1; i >= 0; i--)
         {
             VehicleBogie* frontBogie = stack[i];
@@ -809,26 +812,24 @@ namespace OpenLoco::Vehicles
 
             // mov ax, [ebx+0Ah]
             // mov  [edi+3Ah], ax
-            edi->nextEntityId = frontBogie->id;
+            componentAhead->nextEntityId = frontBogie->id;
             // movzx edi, word ptr [ebx+3Ah]
             // shl edi, 7
             // add edi, offset things
-            edi = frontBogie->nextVehicleComponent()->asBase<VehicleBogie>();
-
             // movzx edi, word ptr [edi+3Ah]
             // shl edi, 7
             // add edi, offset things
-            edi = edi->nextVehicleComponent()->asBase<VehicleBogie>();
+            componentAhead = componentAhead->nextVehicleComponent()->nextVehicleComponent()->asBase<VehicleCommon>(); // get the body of the component ahead
             // xor byte ptr [edi+38h], 2
-            edi->var_38 ^= Flags38::isReversed;
+            componentAhead->var_38 ^= Flags38::isReversed;
             // mov byte ptr [edi+1], 5
-            edi->setSubType(VehicleEntityType::body_continued);
+            componentAhead->setSubType(VehicleEntityType::body_continued);
             // or edx, edx
             // jnz short loc_4B00F1
 
+            // loc_4B00B7 cont.
             // This code hits on only the first iteration
             // Sets esi to the rearmost body and sets its type to body start
-            // loc_4B00B7 cont.
 
             // mov esi, ebx
             // mov byte ptr [edi+1], 4
@@ -838,25 +839,26 @@ namespace OpenLoco::Vehicles
             // jmp short loc_4B00B7
         }
         // esi, set with the very top of the stack only
-        // if the stack was empty newFrontBody would be frontBogieOfNextVehicle as it was at loc_4B00B5 but I don't think its possible for stack to be empty
-        VehicleBody* newFirstBody = stack[stack.size() - 1]->asBase<VehicleBody>();
-        newFirstBody->setSubType(VehicleEntityType::body_start);
+        // stack is at minimum one element long with This
+        VehicleBogie* newFirstBogie = stack[stack.size() - 1]->asBase<VehicleBogie>(); // esi
+        newFirstBogie->setSubType(VehicleEntityType::body_start);
 
         // loc_4B00F4
 
         // mov ax, [ecx+0Ah]
-        auto entityIdSwap = frontBogieOfNextVehicle->id;
         // mov [edi+3Ah], ax
-        edi->nextEntityId = entityIdSwap;
+        componentAhead->nextEntityId = frontBogieOfNextComponent->id;
+
         // mov edi, dword_1136100 // This
-        // mov ebx, dword_1136104 // body
+        // mov ebx, dword_1136104 // firstBody
+        
         // movzx ebp, word ptr [esi+3Ah]
         // shl ebp, 7
         // add ebp, offset things
         // movzx ebp, word ptr [ebp+3Ah]
         // shl ebp, 7
         // add ebp, offset things
-        auto newFirstBogie = newFirstBody->nextVehicleComponent()->nextVehicleComponent()->asBase<VehicleBogie>();
+        VehicleBody* newFirstBody = newFirstBogie->nextVehicleComponent()->nextVehicleComponent()->asBase<VehicleBody>();
 
         newFirstBogie->secondaryCargo = this->secondaryCargo;
         newFirstBody->primaryCargo = firstBody->primaryCargo;

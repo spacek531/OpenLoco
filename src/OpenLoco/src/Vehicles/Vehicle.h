@@ -597,7 +597,7 @@ namespace OpenLoco::Vehicles
         uint8_t var_46;            // 0x46 roll/animation sprite index
         uint8_t var_47;            // 0x47 cargo sprite index
         VehicleCargo primaryCargo; // 0x48
-        uint8_t pad_52[0x54 - 0x52];
+        uint16_t var_52;
         uint8_t bodyIndex; // 0x54
         int8_t chuffSoundIndex;
         uint32_t creationDay; // 0x56
@@ -680,7 +680,7 @@ namespace OpenLoco::Vehicles
 
     public:
         AirportObjectFlags getCompatibleAirportType();
-        VehicleBogie* reverseCarAndGetNewFrontBogie();
+        VehicleBogie * reverseCarAndGetNewFrontBogie();
         bool update();
         bool isOnRackRail();
         constexpr bool hasBreakdownFlags(BreakdownFlags flagsToTest) const
