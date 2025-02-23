@@ -770,7 +770,6 @@ namespace OpenLoco::Vehicles
         }
 
         // loc_4B0091
-        // Get the vehicle before the first bogie of this Car. Is either a Body or a Vehicle_2
 
         // mov ecx, esi // the end of the Car (?) is in ecx
         // movzx edi, word ptr [esi+26h] // head of train
@@ -779,6 +778,7 @@ namespace OpenLoco::Vehicles
         VehicleCommon* componentAhead = EntityManager::get<VehicleBase>(getHead())->asBase<VehicleCommon>();
 
         // loc_4B00A0
+        // Get the vehicle before the first bogie of this Car. Is either a Body or a Vehicle_2
 
         // movzx ebx, word ptr [edi+3Ah]
         // shl ebx, 7
@@ -819,7 +819,7 @@ namespace OpenLoco::Vehicles
             // movzx edi, word ptr [edi+3Ah]
             // shl edi, 7
             // add edi, offset things
-            componentAhead = componentAhead->nextVehicleComponent()->nextVehicleComponent()->asBase<VehicleCommon>(); // get the body of the component ahead
+            componentAhead = frontBogie->nextVehicleComponent()->nextVehicleComponent()->asBase<VehicleCommon>(); // get the body
             // xor byte ptr [edi+38h], 2
             componentAhead->var_38 ^= Flags38::isReversed;
             // mov byte ptr [edi+1], 5
