@@ -702,7 +702,7 @@ namespace OpenLoco::Vehicles
         // shl edi, 7
         // add edi, offset things
         // note that This is front bogie I think
-        VehicleBogie rearBogie = *nextVehicleComponent()->asBase<VehicleBogie>();
+        VehicleBogie rearBogie = *nextVehicleComponent()->asBase<VehicleBogie>(); // edi
 
         // mov al, [esi+39h]
         // xchg al, [edi+39h]
@@ -810,8 +810,8 @@ namespace OpenLoco::Vehicles
 
             // loc_4B00B7 cont.
 
-            // mov ax, [ebx+0Ah]
-            // mov  [edi+3Ah], ax
+            // mov ax, [ebx+0Ah] // ebx is the first component of the next carComponent/tail
+            // mov  [edi+3Ah], ax // edi is the last body
             componentAhead->nextEntityId = frontBogie->id;
             // movzx edi, word ptr [ebx+3Ah]
             // shl edi, 7
@@ -841,7 +841,7 @@ namespace OpenLoco::Vehicles
         // esi, set with the very top of the stack only
         // stack is at minimum one element long with This
         VehicleBogie* newFirstBogie = stack[stack.size() - 1]->asBase<VehicleBogie>(); // esi
-        newFirstBogie->setSubType(VehicleEntityType::body_start);
+        newFirstBogie->nextVehicleComponent()->nextVehicleComponent()->setSubType(VehicleEntityType::body_start);
 
         // loc_4B00F4
 
@@ -851,7 +851,7 @@ namespace OpenLoco::Vehicles
 
         // mov edi, dword_1136100 // This
         // mov ebx, dword_1136104 // firstBody
-        
+
         // movzx ebp, word ptr [esi+3Ah]
         // shl ebp, 7
         // add ebp, offset things
