@@ -192,7 +192,12 @@ namespace OpenLoco::Paint
             pitch = kReversePitch[static_cast<uint8_t>(body->spritePitch)];
         }
 
-        uint32_t bodyImageIndex = getBodyImageIndex(sprite, pitch, yaw, body->var_46, body->var_47);
+        uint32_t bodyImageIndex = getBodyImageIndex(sprite, pitch, yaw, body->var_46);
+        uint32_t cargoImageIndex = bodyImageIndex + body->var_47;
+        if (!sprite.hasFlags(BodySpriteFlags::paintCargoAsChild))
+        {
+            bodyImageIndex = cargoImageIndex;
+        }
 
         std::optional<uint32_t> brakingImageIndex = {};
         if (sprite.hasFlags(BodySpriteFlags::hasBrakingLights))
@@ -238,19 +243,28 @@ namespace OpenLoco::Paint
         }
 
         ImageId imageId{};
+        ImageId cargoImageId{};
         if (body->has38Flags(Flags38::isGhost))
         {
             imageId = Gfx::applyGhostToImage(bodyImageIndex);
+            cargoImageId = Gfx::applyGhostToImage(cargoImageIndex);
         }
         else if (body->hasVehicleFlags(VehicleFlags::unk_5))
         {
             imageId = ImageId(bodyImageIndex, ExtColour::unk74);
+            cargoImageId = ImageId(cargoImageIndex, ExtColour::unk74);
         }
         else
         {
             imageId = ImageId(bodyImageIndex, body->colourScheme);
+            cargoImageId = ImageId(cargoImageIndex, body->colourScheme);
         }
         session.addToPlotList4FD200(imageId, offsets, boundBoxOffsets, boundBoxSize);
+
+        if (cargoImageIndex != bodyImageIndex)
+        {
+            session.attachToPrevious(cargoImageId, { 0, 0 });
+        }
 
         if (brakingImageIndex)
         {

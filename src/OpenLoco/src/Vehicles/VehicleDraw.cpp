@@ -205,10 +205,10 @@ namespace OpenLoco
         return pitchImageIndex;
     }
 
-    uint32_t getBodyImageIndex(const VehicleObjectBodySprite& sprite, const Pitch pitch, const uint8_t yaw, const uint8_t roll, const uint8_t cargoIndex)
+    uint32_t getBodyImageIndex(const VehicleObjectBodySprite& sprite, const Pitch pitch, const uint8_t yaw, const uint8_t roll)
     {
         const auto pitchImageIndex = getPitchBodyImageIndex(sprite, pitch, yaw);
-        return pitchImageIndex + roll + cargoIndex;
+        return pitchImageIndex + roll;
     }
     uint32_t getBrakingImageIndex(const VehicleObjectBodySprite& sprite, const Pitch pitch, const uint8_t yaw)
     {
@@ -343,7 +343,7 @@ namespace OpenLoco
                     rollIndex += unk11360E8;
                 }
 
-                auto spriteIndex = getBodyImageIndex(bodySprites, Pitch::flat, unk, rollIndex, 0);
+                auto spriteIndex = getBodyImageIndex(bodySprites, Pitch::flat, unk, rollIndex);
 
                 drawItems.items.push_back(DrawItem{ ImageId(spriteIndex, colourScheme), bodyDist, true });
             }
@@ -428,10 +428,18 @@ namespace OpenLoco
                 }
 
                 auto rollIndex = isAnimated ? carComponent.body->var_46 : 0;
-                rollIndex += carComponent.body->var_47;
 
-                auto spriteIndex = getBodyImageIndex(bodySprites, Pitch::flat, unk, rollIndex, 0);
-                drawItems.items.push_back(DrawItem{ ImageId(spriteIndex, carComponent.body->colourScheme), bodyDist, true });
+                auto bodyImageIndex = getBodyImageIndex(bodySprites, Pitch::flat, unk, rollIndex);
+                uint32_t cargoImageIndex = bodyImageIndex + carComponent.body->var_47;
+                if (!bodySprites.hasFlags(BodySpriteFlags::paintCargoAsChild))
+                {
+                    bodyImageIndex = cargoImageIndex;
+                }
+                drawItems.items.push_back(DrawItem{ ImageId(bodyImageIndex, carComponent.body->colourScheme), bodyDist, true });
+                if (cargoImageIndex != bodyImageIndex)
+                {
+                    drawItems.items.push_back(DrawItem{ ImageId(cargoImageIndex, carComponent.body->colourScheme), bodyDist, true });
+                }
                 if (isAnimated
                     && bodySprites.hasFlags(BodySpriteFlags::hasBrakingLights)
                     && train.veh2->var_5B != 0)
