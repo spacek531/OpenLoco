@@ -343,7 +343,7 @@ namespace OpenLoco::GameCommands
                 elIndustry.setSectionProgress(0);
                 elIndustry.setColour(colour);
                 elIndustry.setBuildingType(buildingType);
-                elIndustry.setVar_6_003F(0);
+                elIndustry.setSectionsCompleted(0);
                 World::AnimationManager::createAnimation(3, World::toWorldSpace(tilePos), elIndustry.baseZ());
                 elIndustry.setGhost(flags & Flags::ghost);
                 Ui::ViewportManager::invalidate(World::toWorldSpace(tilePos), elIndustry.baseHeight(), elIndustry.clearHeight());
@@ -705,9 +705,9 @@ namespace OpenLoco::GameCommands
         return totalCost;
     }
 
-    void createIndustry(registers& regs)
+    void createIndustry(registers& regs, const uint8_t flags)
     {
         IndustryPlacementArgs args(regs);
-        regs.ebx = createIndustry(args, regs.bl);
+        regs.ebx = createIndustry(args, flags);
     }
 }

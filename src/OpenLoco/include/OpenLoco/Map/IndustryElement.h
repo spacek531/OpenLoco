@@ -10,12 +10,16 @@ namespace OpenLoco
 
 namespace OpenLoco::World
 {
-    enum class IndustryElementFlags : uint16_t
-    {
-        none = 0U,
-        randomAnimationPlaying = 1U << 5,
-    };
-    OPENLOCO_ENABLE_ENUM_OPERATORS(IndustryElementFlags);
+
+    constexpr uint16_t kIndustryElement6ColourMask = 0xF800;
+    constexpr uint16_t kIndustryElement6BuildingTypeMask = 0x07C0;
+    constexpr uint16_t kIndustryElement6RandomAnimationTypeMask = 0x0003;
+    constexpr uint16_t kIndustryElement6SectionsCompletedMask = 0x001F;
+    constexpr uint16_t kIndustryElement5TileSequenceMask = 0x03;
+    constexpr uint16_t kIndustryElement6RandomAnimationPlaying = (1 << 5);
+    constexpr uint16_t kIndustryElement6RandomAnimationAvailable = (1 << 4);
+    constexpr uint8_t kIndustryElement5SectionConstructionProgressMask = 0xE0;
+
 #pragma pack(push, 1)
 
     struct IndustryElement : public TileElement
@@ -24,12 +28,24 @@ namespace OpenLoco::World
 
     private:
         IndustryId _industryId;
+
+        /* Field _5 data structures
+         * 0b111xxxxx = construction progress of uppermost section
+         * 0bxxxxxx11 = sequence number of multi-tile building
+         * 0bxxx111xx = unused bits
+         */
         uint8_t _5;
-        union
-        {
-            uint16_t _6;
-            IndustryElementFlags industryFlags;
-        };
+
+        /* Field _6 data structures
+         * 0b11111xxxxxxxxxxx = colour
+         * 0bxxxxx11111xxxxxx = building type
+         * 0bxxxxxxxxxx1xxxxx = random animation is playing
+         * 0bxxxxxxxxxxx1xxxx = random animations can play
+         * 0bxxxxxxxxxxxxxx11 = random animation type
+         * 0bxxxxxxxxxxxx11xx = unused bits (of above)
+         * 0bxxxxxxxxxx111111 = number of building sections completed
+         */
+        uint16_t _6;
 
     public:
         // _4
@@ -40,7 +56,7 @@ namespace OpenLoco::World
         uint8_t buildingType() const;
         void setBuildingType(uint8_t type)
         {
-            _6 &= ~0x7C0;
+            _6 &= ~kIndustryElement6BuildingTypeMask;
             _6 |= type << 6;
         }
         uint8_t rotation() const { return _0 & 0x3; }
@@ -53,32 +69,39 @@ namespace OpenLoco::World
         uint8_t sequenceIndex() const;
         void setSequenceIndex(const uint8_t index)
         {
-            _5 &= ~0x3;
-            _5 |= index & 0x3;
+            _5 &= ~kIndustryElement5TileSequenceMask;
+            _5 |= index & kIndustryElement5TileSequenceMask;
         }
         // var_5_E0
         uint8_t sectionProgress() const;
         void setSectionProgress(uint8_t val);
 
-        Colour var_6_F800() const;
+        Colour colour() const;
         void setColour(Colour c)
         {
-            _6 &= ~0xF800;
+            _6 &= ~kIndustryElement6ColourMask;
             _6 |= enumValue(c) << 11;
         }
 
-        // This has two uses. When under construction it is the number of completed sections. Otherwise its animation sequence related
-        uint8_t var_6_003F() const;
-        void setVar_6_003F(uint8_t val);
+        uint8_t sectionsCompleted() const;
+        void setSectionsCompleted(uint8_t val);
 
         bool isConstructed() const { return _0 & 0x80; }
         void setIsConstructed(bool val);
 
         bool update(const World::Pos2& loc);
-        constexpr bool hasFlags(IndustryElementFlags flagsToTest) const
+
+        bool randomAnimationPlaying() const { return _6 & kIndustryElement6RandomAnimationPlaying; }
+        void setRandomAnimationPlaying(bool val);
+
+        bool randomAnimationAvailable() const { return _6 & kIndustryElement6RandomAnimationAvailable; }
+        void setRandomAnimationAvailable(bool val);
+
+        constexpr uint8_t randomAnimationType() const
         {
-            return (industryFlags & flagsToTest) != IndustryElementFlags::none;
+            return _6 & kIndustryElement6RandomAnimationTypeMask;
         }
+        void setRandomAnimationType(uint8_t type);
     };
 #pragma pack(pop)
     static_assert(sizeof(IndustryElement) == kTileElementSize);
