@@ -185,7 +185,7 @@ namespace OpenLoco::World
                     break;
                 }
             }
-            if (hasAZeroFrame && !(var_6_003F() & (1 << 5)))
+            if (hasAZeroFrame && !hasFlags(IndustryElementFlags::randomAnimationPlaying))
             {
                 std::array<uint8_t, 8> _E0C3D4{};
                 auto ptr = _E0C3D4.begin();
@@ -243,7 +243,7 @@ namespace OpenLoco::World
     }
 
     // 0x00456E32
-    bool updateIndustryAnimation1(const Animation& anim)
+    bool updateIndustryContinuousAnimation(const Animation& anim)
     {
         auto tile = TileManager::get(anim.pos);
         for (auto& el : tile)
@@ -288,7 +288,7 @@ namespace OpenLoco::World
     }
 
     // 0x00456EEB
-    bool updateIndustryAnimation2(const Animation& anim)
+    bool updateIndustryRandomAnimation(const Animation& anim)
     {
         auto tile = TileManager::get(anim.pos);
         for (auto& el : tile)
@@ -302,7 +302,7 @@ namespace OpenLoco::World
             {
                 continue;
             }
-            if (!(elIndustry->var_6_003F() & (1 << 5)))
+            if (!elIndustry->hasFlags(IndustryElementFlags::randomAnimationPlaying))
             {
                 continue;
             }
