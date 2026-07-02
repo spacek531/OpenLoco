@@ -36,6 +36,8 @@
 #include "Ui/ViewportInteraction.h"
 #include "Ui/Widget.h"
 #include "Ui/Widgets/CaptionWidget.h"
+#include "Ui/Widgets/CheckboxWidget.h"
+#include "Ui/Widgets/ColourButtonWidget.h"
 #include "Ui/Widgets/FrameWidget.h"
 #include "Ui/Widgets/GroupBoxWidget.h"
 #include "Ui/Widgets/ImageButtonWidget.h"
@@ -44,8 +46,10 @@
 #include "Ui/Widgets/StepperWidget.h"
 #include "Ui/Widgets/TableHeaderWidget.h"
 #include "Ui/WindowManager.h"
+#include "Ui/Windows/Construction/Construction.h"
 #include "World/CompanyManager.h"
 #include "World/Industry.h"
+#include "World/IndustryManager.h"
 #include "World/Station.h"
 
 #include <OpenLoco/Utility/LookupTable.hpp>
@@ -55,9 +59,13 @@ using namespace OpenLoco::World;
 
 namespace OpenLoco::Ui::Windows::TileInspector
 {
-    static TilePos2 _currentPosition{};
 
-    static constexpr Ui::Size kWindowSize = { 350, 200 };
+    StringId getElementTypeName(const TileElementEntry& element);
+    StringId getObjectName(const TileElementEntry& element);
+    std::tuple<StringId, CompanyId> getOwnerName(const TileElementEntry& element);
+
+    static TilePos2 _currentPosition{};
+    static int _selectedTileType = -1; // int instead of ElementType because ElementType has no null/sentinel value
 
     namespace widx
     {
@@ -81,8 +89,48 @@ namespace OpenLoco::Ui::Windows::TileInspector
             ghostHeader,
             scrollview,
             detailsGroup,
+
+            // below: widgets which change position and visibility based on type of selected tile element
+            primaryColour,
+            secondaryColour,
+            tertiaryColour,
+
+            checkbox1,
+            industryConstructionCompleteCheckbox = checkbox1,
+
+            checkbox2,
+            industryRandomAnimationQueuedCheckbox = checkbox2,
+
+            checkbox3,
+            industryRandomAnimationPlayingCheckbox = checkbox3,
         };
     }
+
+    constexpr int16_t kDataGroupBoxTop = 165;
+    constexpr int32_t kDataColumnSpacing[4][4] = {
+        { 10, 0, 0, 0 },
+        { 10, 180, 0, 0 },
+        { 10, 125, 250, 0 },
+    };
+    constexpr int32_t kDataRowHeight = 14;
+    constexpr int32_t kDataRows = 9;
+
+    constexpr int32_t dataY(int32_t row)
+    {
+        return kDataGroupBoxTop + kDataRowHeight * row;
+    }
+
+    constexpr int32_t dataX(uint8_t columns, uint8_t column)
+    {
+        return kDataColumnSpacing[columns - 1][column - 1];
+    }
+
+    constexpr Point dataPosition(int32_t row, uint8_t columns, uint8_t column, Point windowPos)
+    {
+        return Point(windowPos.x + dataX(columns, column), windowPos.y + dataY(row));
+    }
+
+    static constexpr Ui::Size kWindowSize = { 350, kDataGroupBoxTop + kDataRowHeight* kDataRows + 4 };
 
     static constexpr auto _widgets = makeWidgets(
         Widgets::Frame({ 0, 0 }, kWindowSize, WindowColour::primary),
@@ -98,9 +146,141 @@ namespace OpenLoco::Ui::Windows::TileInspector
         Widgets::TableHeader({ kWindowSize.width - 49, 46 }, { 15, 12 }, WindowColour::secondary, StringIds::tileInspectorHeaderDirection, StringIds::tileInspectorHeaderDirectionTip),
         Widgets::TableHeader({ kWindowSize.width - 34, 46 }, { 30, 12 }, WindowColour::secondary, StringIds::tileInspectorHeaderGhost, StringIds::tileInspectorHeaderGhostTip),
         Widgets::ScrollView({ 4, 60 }, { kWindowSize.width - 8, 103 }, WindowColour::secondary, Ui::Scrollbars::vertical),
-        Widgets::GroupBox({ 4, 165 }, { kWindowSize.width - 8, 30 }, WindowColour::secondary, StringIds::tile_element_data)
+        Widgets::GroupBox({ 4, kDataGroupBoxTop }, { kWindowSize.width - 8, kWindowSize.height - kDataGroupBoxTop - 4 }, WindowColour::secondary, StringIds::tile_element_data),
+        Widgets::ImageButton({ 80, 210 }, { 16, 16 }, WindowColour::secondary, Widget::kContentNull, StringIds::empty),
+        Widgets::ImageButton({ 80, 210 }, { 16, 16 }, WindowColour::secondary, Widget::kContentNull, StringIds::empty),
+        Widgets::ImageButton({ 80, 210 }, { 16, 16 }, WindowColour::secondary, Widget::kContentNull, StringIds::empty),
+        Widgets::Checkbox({ 15, 80 }, { 140, 12 }, WindowColour::secondary, StringIds::empty, StringIds::empty),
+        Widgets::Checkbox({ 15, 80 }, { 140, 12 }, WindowColour::secondary, StringIds::empty, StringIds::empty),
+        Widgets::Checkbox({ 15, 80 }, { 140, 12 }, WindowColour::secondary, StringIds::empty, StringIds::empty));
 
-    );
+    static constexpr Point kPrimaryColourPositions[] = {
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(dataX(3, 1), dataY(4) - 3),
+    };
+
+    static constexpr Point kSecondaryColourPositions[] = {
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+    };
+
+    static constexpr Point kTertiaryColourPositions[] = {
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+    };
+
+    static constexpr Point kCheckbox1Positions[] = {
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(dataX(3, 1), dataY(6)),
+    };
+
+    static constexpr Point kCheckbox2Positions[] = {
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(dataX(3, 2), dataY(6)),
+    };
+
+    static constexpr Point kCheckbox3Positions[] = {
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(),
+        Point(dataX(3, 2), dataY(7)),
+    };
+
+    static constexpr StringId kCheckbox1Contents[] = {
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::tile_inspector_industry_element_construction_complete,
+    };
+
+    static constexpr StringId kCheckbox2Contents[] = {
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::tile_inspector_industry_element_random_animation_queued,
+    };
+
+    static constexpr StringId kCheckbox3Contents[] = {
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::empty,
+        StringIds::tile_inspector_industry_element_random_animation_playing,
+    };
+
+    static void repositionWidget(Widget& widget, const Point* positions)
+    {
+        widget.hidden = _selectedTileType == -1;
+        if (_selectedTileType == -1)
+        {
+            return;
+        }
+        Point widgetSize = Point(widget.right - widget.left, widget.bottom - widget.top);
+        Point position = positions[_selectedTileType];
+        if (position == Point())
+        {
+            widget.hidden = true;
+            return;
+        }
+        widget.left = position.x;
+        widget.top = position.y;
+        widget.right = widget.left + widgetSize.x;
+        widget.bottom = widget.top + widgetSize.y;
+    }
 
     static void activateMapSelectionTool(const Window& self)
     {
@@ -134,9 +314,40 @@ namespace OpenLoco::Ui::Windows::TileInspector
         window->setColour(WindowColour::primary, skin->windowTitlebarColour);
         window->setColour(WindowColour::secondary, skin->windowColour);
 
+        _selectedTileType = -1;
         activateMapSelectionTool(*window);
 
         return window;
+    }
+
+    static TileElementEntry* getSelectedTile(int16_t selectedTileIndex)
+    {
+        if (_currentPosition == TilePos2(0, 0))
+        {
+            return nullptr;
+        }
+        auto tile = TileManager::get(_currentPosition);
+        if (selectedTileIndex >= tile.size())
+        {
+            return nullptr;
+        }
+        return tile[selectedTileIndex];
+    }
+    static std::tuple<Colour, Colour, Colour> getElementColour(const TileElementEntry& element)
+    {
+        switch (element.type())
+        {
+            case ElementType::building:
+                return { element.get<BuildingElement>().colour(), Colour::black, Colour::black };
+            case ElementType::industry:
+                return { element.get<IndustryElement>().colour(), Colour::black, Colour::black };
+            case ElementType::tree:
+                return { element.get<TreeElement>().colour(), Colour::black, Colour::black };
+            case ElementType::wall:
+                return { element.get<WallElement>().getPrimaryColour(), element.get<WallElement>().getSecondaryColour(), element.get<WallElement>().getTertiaryColour() };
+            default:
+                return { Colour::black, Colour::black, Colour::black };
+        }
     }
 
     static void prepareDraw(Window& self)
@@ -148,6 +359,126 @@ namespace OpenLoco::Ui::Windows::TileInspector
         else
         {
             self.activatedWidgets &= ~(1 << widx::select);
+        }
+        auto element = getSelectedTile(self.selectedTileIndex);
+        if (element == nullptr)
+        {
+            _selectedTileType = -1;
+            for (int i = widx::primaryColour; i <= widx::checkbox3; i++)
+            {
+                self.widgets[i].hidden = true;
+            }
+            return;
+        }
+
+        _selectedTileType = enumValue(element->type());
+        for (int i = widx::primaryColour; i <= widx::checkbox3; i++)
+        {
+            self.widgets[i].hidden = false;
+        }
+
+        auto colours = getElementColour(*element);
+        self.widgets[widx::primaryColour].image = Widget::kImageIdColourSet | Gfx::recolour(ImageIds::colour_swatch_recolourable, std::get<0>(colours));
+        self.widgets[widx::secondaryColour].image = Widget::kImageIdColourSet | Gfx::recolour(ImageIds::colour_swatch_recolourable, std::get<1>(colours));
+        self.widgets[widx::tertiaryColour].image = Widget::kImageIdColourSet | Gfx::recolour(ImageIds::colour_swatch_recolourable, std::get<2>(colours));
+
+        repositionWidget(self.widgets[widx::primaryColour], kPrimaryColourPositions);
+        repositionWidget(self.widgets[widx::secondaryColour], kSecondaryColourPositions);
+        repositionWidget(self.widgets[widx::tertiaryColour], kTertiaryColourPositions);
+
+        repositionWidget(self.widgets[widx::checkbox1], kCheckbox1Positions);
+        self.widgets[widx::checkbox1].text = kCheckbox1Contents[_selectedTileType];
+
+        repositionWidget(self.widgets[widx::checkbox2], kCheckbox2Positions);
+        self.widgets[widx::checkbox2].text = kCheckbox2Contents[_selectedTileType];
+
+        repositionWidget(self.widgets[widx::checkbox3], kCheckbox3Positions);
+        self.widgets[widx::checkbox3].text = kCheckbox3Contents[_selectedTileType];
+    }
+
+    static void drawNoTileSelected(Ui::Window& self, Gfx::TextRenderer& tr, Point point)
+    {
+        point += Point(7, 14);
+        tr.drawStringLeft(point, Colour::black, StringIds::tile_inspector_no_tile_selected);
+    }
+
+    static void drawUnknownTileType(Ui::Window& self, Gfx::TextRenderer& tr, Point point)
+    {
+    }
+
+    static void drawIndustryTileData(Ui::Window& self, Gfx::TextRenderer& tr, const TileElementEntry& element, int32_t currentRow)
+    {
+        const IndustryElement& tileElement = element.get<IndustryElement>();
+        const auto& industry = *tileElement.industry();
+
+        auto wpos = Point(self.x, self.y);
+
+        AdvancedColour completedColour = AdvancedColour(Colour::grey);
+        AdvancedColour constructionColour = AdvancedColour(Colour::grey);
+        if (tileElement.isConstructed())
+        {
+            constructionColour = constructionColour.inset();
+        }
+        else
+        {
+            completedColour = completedColour.inset();
+        }
+
+        // colour
+        {
+            FormatArguments args{};
+            args.push<uint16_t>(enumValue(tileElement.colour()));
+            tr.drawStringLeft(dataPosition(4, 3, 1, wpos) + Point(20, 0), Colour::black, StringIds::tile_inspector_industry_element_colour, args);
+        }
+        // associated industry
+        {
+            FormatArguments args{};
+            args.push(industry.name);
+            args.push(StringIds::empty);
+            args.push<uint16_t>(enumValue(industry.id()));
+            tr.drawStringLeft(dataPosition(4, 3, 2, wpos), Colour::black, StringIds::tile_inspector_industry_element_industry, args);
+        }
+
+        // building type
+        {
+            FormatArguments args{};
+            args.push<uint16_t>(tileElement.buildingType());
+            tr.drawStringLeft(dataPosition(5, 3, 1, wpos), Colour::black, StringIds::tile_inspector_industry_element_building_type, args);
+        }
+
+        // sequence number
+        {
+            FormatArguments args{};
+            args.push<uint16_t>(tileElement.sequenceIndex());
+            tr.drawStringLeft(dataPosition(5, 3, 2, wpos), Colour::black, StringIds::tile_inspector_industry_element_sequence_index, args);
+        }
+
+        self.widgets[widx::industryConstructionCompleteCheckbox].activated = tileElement.isConstructed();
+
+        self.widgets[widx::industryRandomAnimationQueuedCheckbox].disabled = !tileElement.isConstructed();
+        self.widgets[widx::industryRandomAnimationQueuedCheckbox].activated = tileElement.randomAnimationQueued();
+
+        // construction progress
+        {
+            FormatArguments args{};
+            args.push<int16_t>(tileElement.sectionsCompleted());
+            tr.drawStringLeft(dataPosition(7, 3, 1, wpos), constructionColour, StringIds::tile_inspector_industry_element_completed_sections, args);
+        }
+
+        self.widgets[widx::industryRandomAnimationPlayingCheckbox].disabled = !tileElement.isConstructed();
+        self.widgets[widx::industryRandomAnimationPlayingCheckbox].activated = tileElement.randomAnimationPlaying();
+
+        // construction progress
+        {
+            FormatArguments args{};
+            args.push<int16_t>(tileElement.sectionProgress());
+            tr.drawStringLeft(dataPosition(8, 3, 1, wpos), constructionColour, StringIds::tile_inspector_industry_element_section_progress, args);
+        }
+        // animation type
+        {
+            FormatArguments args{};
+            args.push<int16_t>(tileElement.randomAnimationType());
+            tr.drawStringLeft(dataPosition(8, 3, 2, wpos), completedColour, StringIds::tile_inspector_industry_element_random_animation_type, args);
         }
     }
 
@@ -190,22 +521,71 @@ namespace OpenLoco::Ui::Windows::TileInspector
         }
 
         // Selected element details
-        if (self.selectedTileIndex != -1)
+        auto widget = self.widgets[widx::detailsGroup];
+        auto point = Point(self.x + widget.left, self.y + widget.top);
+
+        auto element = getSelectedTile(self.selectedTileIndex);
+        if (element == nullptr)
         {
-            auto tile = TileManager::get(_currentPosition)[self.selectedTileIndex];
-            const auto data = tile->rawData();
+            drawNoTileSelected(self, tr, point);
+            return;
+        }
 
-            char buffer[32]{};
-            buffer[0] = ControlCodes::windowColour2;
-            snprintf(&buffer[1], std::size(buffer) - 1, "Data: %02x %02x %02x %02x %02x %02x %02x %02x", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+        Point wpos = Point(self.x, self.y);
+        // base height
+        {
+            FormatArguments args{};
+            args.push<int16_t>(element->baseZ());
+            tr.drawStringLeft(dataPosition(1, 3, 1, wpos), Colour::black, StringIds::tile_inspector_tile_element_base_height, args);
+        }
+        // tile type
+        {
+            FormatArguments args{};
+            args.push(getElementTypeName(*element));
+            args.push(static_cast<uint16_t>(element->type()));
+            tr.drawStringLeft(dataPosition(1, 3, 2, wpos), Colour::black, StringIds::tile_inspector_tile_element_type, args);
+        }
 
-            auto widget = self.widgets[widx::detailsGroup];
-            auto point = Point(self.x + widget.left + 7, self.y + widget.top + 14);
-            tr.drawString(point, Colour::black, buffer);
+        // clearance
+        {
+            FormatArguments args{};
+            args.push<int16_t>(element->clearZ());
+            tr.drawStringLeft(dataPosition(2, 3, 1, wpos), Colour::black, StringIds::tile_inspector_tile_element_clearance_height, args);
+        }
+        // object
+        {
+            FormatArguments args{};
+            args.push(getObjectName(*element));
+            tr.drawStringLeft(dataPosition(2, 3, 2, wpos), Colour::black, StringIds::tile_inspector_tile_element_object, args);
+        }
+
+        // rotation
+        {
+            FormatArguments args{};
+            args.push<int16_t>(element->data()[0] & 0x3);
+            tr.drawStringLeft(dataPosition(3, 3, 1, wpos), Colour::black, StringIds::tile_inspector_tile_element_rotation, args);
+        }
+        // owner
+        {
+            FormatArguments args{};
+            auto ownerInfo = getOwnerName(*element);
+            args.push(std::get<0>(ownerInfo));
+            args.push(StringIds::empty);
+            args.push<int16_t>(enumValue(std::get<1>(ownerInfo)));
+            tr.drawStringLeft(dataPosition(3, 3, 2, wpos), Colour::black, StringIds::tile_inspector_tile_element_owner, args);
+        }
+
+        switch (element->type())
+        {
+            case ElementType::industry:
+                drawIndustryTileData(self, tr, *element, 3);
+                break;
+            default:
+                drawUnknownTileType(self, tr, point);
         }
     }
 
-    static StringId getElementTypeName(const TileElementEntry& element)
+    StringId getElementTypeName(const TileElementEntry& element)
     {
         static constexpr auto kTypeToString = Utility::buildLookupTable<ElementType, StringId>({
             { ElementType::surface, StringIds::tile_inspector_element_type_surface },
@@ -222,7 +602,7 @@ namespace OpenLoco::Ui::Windows::TileInspector
         return kTypeToString.at(element.type());
     }
 
-    static StringId getObjectName(const TileElementEntry& element)
+    StringId getObjectName(const TileElementEntry& element)
     {
         switch (element.type())
         {
@@ -317,7 +697,7 @@ namespace OpenLoco::Ui::Windows::TileInspector
         return StringIds::empty;
     }
 
-    static StringId getOwnerName(const TileElementEntry& element)
+    std::tuple<StringId, CompanyId> getOwnerName(const TileElementEntry& element)
     {
         if (element.type() == ElementType::road)
         {
@@ -326,7 +706,7 @@ namespace OpenLoco::Ui::Windows::TileInspector
             if (ownerId != CompanyId::neutral)
             {
                 auto company = CompanyManager::get(ownerId);
-                return company->name;
+                return { company->name, ownerId };
             }
         }
         else if (element.type() == ElementType::track)
@@ -336,10 +716,20 @@ namespace OpenLoco::Ui::Windows::TileInspector
             if (ownerId != CompanyId::neutral)
             {
                 auto company = CompanyManager::get(ownerId);
-                return company->name;
+                return { company->name, ownerId };
             }
         }
-        return StringIds::empty;
+        else if (element.type() == ElementType::industry)
+        {
+            auto& industryElement = element.get<IndustryElement>();
+            auto industry = IndustryManager::get(industryElement.industryId());
+            if (industry->owner != CompanyId::neutral)
+            {
+                auto company = CompanyManager::get(industry->owner);
+                return { company->name, industry->owner };
+            }
+        }
+        return { StringIds::publicly_owned, CompanyId::neutral };
     }
 
     static void drawScroll(Ui::Window& self, Gfx::DrawingContext& drawingCtx, const uint32_t)
@@ -387,9 +777,10 @@ namespace OpenLoco::Ui::Windows::TileInspector
 
             StringId elementName = getElementTypeName(element);
             StringId objectName = getObjectName(element);
-            StringId ownerName = getOwnerName(element);
+            auto ownerInfo = getOwnerName(element);
+            StringId ownerName = std::get<0>(ownerInfo);
 
-            if (ownerName != StringIds::empty)
+            if (std::get<1>(ownerInfo) != CompanyId::neutral)
             {
                 args.push(StringIds::tile_inspector_entry_three_pos);
                 args.push(objectName);

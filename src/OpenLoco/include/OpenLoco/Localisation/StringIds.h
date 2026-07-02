@@ -2159,6 +2159,27 @@ namespace OpenLoco::StringIds
     constexpr StringId enter_preferred_company_name = 2443;
     constexpr StringId cannot_change_company_name = 2444;
 
+    constexpr StringId tile_inspector_tile_raw_data = 2500;
+    constexpr StringId tile_inspector_no_tile_selected = 2501;
+    constexpr StringId tile_inspector_tile_element_type = 2502;
+    constexpr StringId publicly_owned = 2503;
+    constexpr StringId tile_inspector_tile_element_object = 2504;
+    constexpr StringId tile_inspector_tile_element_owner = 2505;
+    constexpr StringId tile_inspector_tile_element_index = 2506;
+    constexpr StringId tile_inspector_tile_element_base_height = 2507;
+    constexpr StringId tile_inspector_tile_element_clearance_height = 2508;
+    constexpr StringId tile_inspector_tile_element_rotation = 2509;
+    constexpr StringId tile_inspector_industry_element_industry = 2510;
+    constexpr StringId tile_inspector_industry_element_building_type = 2511;
+    constexpr StringId tile_inspector_industry_element_colour = 2512;
+    constexpr StringId tile_inspector_industry_element_construction_complete = 2513;
+    constexpr StringId tile_inspector_industry_element_sequence_index= 2514;
+    constexpr StringId tile_inspector_industry_element_random_animation_queued = 2515;
+    constexpr StringId tile_inspector_industry_element_completed_sections = 2516;
+    constexpr StringId tile_inspector_industry_element_random_animation_playing = 2517;
+    constexpr StringId tile_inspector_industry_element_section_progress = 2518;
+    constexpr StringId tile_inspector_industry_element_random_animation_type = 2519;
+
     constexpr StringId temporary_object_load_str_0 = 8192;
     constexpr StringId temporary_object_load_str_1 = 8193;
     constexpr StringId temporary_object_load_str_2 = 8194;
