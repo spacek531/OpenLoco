@@ -37,7 +37,6 @@
 #include "Ui/Widget.h"
 #include "Ui/Widgets/CaptionWidget.h"
 #include "Ui/Widgets/CheckboxWidget.h"
-#include "Ui/Widgets/ColourButtonWidget.h"
 #include "Ui/Widgets/FrameWidget.h"
 #include "Ui/Widgets/GroupBoxWidget.h"
 #include "Ui/Widgets/ImageButtonWidget.h"
@@ -46,7 +45,7 @@
 #include "Ui/Widgets/StepperWidget.h"
 #include "Ui/Widgets/TableHeaderWidget.h"
 #include "Ui/WindowManager.h"
-#include "Ui/Windows/Construction/Construction.h"
+
 #include "World/CompanyManager.h"
 #include "World/Industry.h"
 #include "World/IndustryManager.h"
