@@ -95,13 +95,13 @@ namespace OpenLoco::Ui::Windows::TileInspector
             tertiaryColour,
 
             checkbox1,
-            industryConstructionCompleteCheckbox = checkbox1,
+            industryConstructionComplete = checkbox1,
 
             checkbox2,
-            industryRandomAnimationQueuedCheckbox = checkbox2,
+            industryRandomAnimationPlaying = checkbox2,
 
             checkbox3,
-            industryRandomAnimationPlayingCheckbox = checkbox3,
+            industryRandomAnimationAvailable = checkbox3,
         };
     }
 
@@ -234,7 +234,7 @@ namespace OpenLoco::Ui::Windows::TileInspector
         StringIds::empty,
         StringIds::empty,
         StringIds::empty,
-        StringIds::tile_inspector_industry_element_construction_complete,
+        StringIds::tile_inspector_industry_construction_complete,
     };
 
     static constexpr StringId kCheckbox2Contents[] = {
@@ -246,7 +246,7 @@ namespace OpenLoco::Ui::Windows::TileInspector
         StringIds::empty,
         StringIds::empty,
         StringIds::empty,
-        StringIds::tile_inspector_industry_element_random_animation_playing,
+        StringIds::tile_inspector_industry_random_animation_playing,
     };
 
     static constexpr StringId kCheckbox3Contents[] = {
@@ -258,7 +258,7 @@ namespace OpenLoco::Ui::Windows::TileInspector
         StringIds::empty,
         StringIds::empty,
         StringIds::empty,
-        StringIds::tile_inspector_industry_element_random_animation_available,
+        StringIds::tile_inspector_industry_random_animation_available,
     };
 
     static void repositionWidget(Widget& widget, const Point* positions)
@@ -423,7 +423,7 @@ namespace OpenLoco::Ui::Windows::TileInspector
         {
             FormatArguments args{};
             args.push<uint16_t>(enumValue(tileElement.colour()));
-            tr.drawStringLeft(dataPosition(4, 3, 1, wpos) + Point(20, 0), Colour::black, StringIds::tile_inspector_industry_element_colour, args);
+            tr.drawStringLeft(dataPosition(4, 3, 1, wpos) + Point(20, 0), Colour::black, StringIds::tile_inspector_element_colour_1, args);
         }
         // associated industry
         {
@@ -431,49 +431,49 @@ namespace OpenLoco::Ui::Windows::TileInspector
             args.push(industry.name);
             args.push(StringIds::empty);
             args.push<uint16_t>(enumValue(industry.id()));
-            tr.drawStringLeft(dataPosition(4, 3, 2, wpos), Colour::black, StringIds::tile_inspector_industry_element_industry, args);
+            tr.drawStringLeft(dataPosition(4, 3, 2, wpos), Colour::black, StringIds::tile_inspector_industry_name, args);
         }
 
         // building type
         {
             FormatArguments args{};
             args.push<uint16_t>(tileElement.buildingType());
-            tr.drawStringLeft(dataPosition(5, 3, 1, wpos), Colour::black, StringIds::tile_inspector_industry_element_building_type, args);
+            tr.drawStringLeft(dataPosition(5, 3, 1, wpos), Colour::black, StringIds::tile_inspector_industry_building_type, args);
         }
 
         // sequence number
         {
             FormatArguments args{};
             args.push<uint16_t>(tileElement.sequenceIndex());
-            tr.drawStringLeft(dataPosition(5, 3, 2, wpos), Colour::black, StringIds::tile_inspector_industry_element_sequence_index, args);
+            tr.drawStringLeft(dataPosition(5, 3, 2, wpos), Colour::black, StringIds::tile_inspector_industry_sequence_index, args);
         }
 
-        self.widgets[widx::industryConstructionCompleteCheckbox].activated = tileElement.isConstructed();
+        self.widgets[widx::industryConstructionComplete].activated = tileElement.isConstructed();
 
-        self.widgets[widx::industryRandomAnimationQueuedCheckbox].disabled = !tileElement.isConstructed();
-        self.widgets[widx::industryRandomAnimationQueuedCheckbox].activated = tileElement.randomAnimationPlaying();
+        self.widgets[widx::industryRandomAnimationPlaying].disabled = !tileElement.isConstructed();
+        self.widgets[widx::industryRandomAnimationPlaying].activated = tileElement.randomAnimationPlaying();
 
         // construction progress
         {
             FormatArguments args{};
             args.push<int16_t>(tileElement.sectionsCompleted());
-            tr.drawStringLeft(dataPosition(7, 3, 1, wpos), constructionColour, StringIds::tile_inspector_industry_element_completed_sections, args);
+            tr.drawStringLeft(dataPosition(7, 3, 1, wpos), constructionColour, StringIds::tile_inspector_industry_completed_sections, args);
         }
 
-        self.widgets[widx::industryRandomAnimationPlayingCheckbox].disabled = !tileElement.isConstructed();
-        self.widgets[widx::industryRandomAnimationPlayingCheckbox].activated = tileElement.randomAnimationAvailable();
+        self.widgets[widx::industryRandomAnimationAvailable].disabled = !tileElement.isConstructed();
+        self.widgets[widx::industryRandomAnimationAvailable].activated = tileElement.randomAnimationAvailable();
 
         // construction progress
         {
             FormatArguments args{};
             args.push<int16_t>(tileElement.sectionProgress());
-            tr.drawStringLeft(dataPosition(8, 3, 1, wpos), constructionColour, StringIds::tile_inspector_industry_element_section_progress, args);
+            tr.drawStringLeft(dataPosition(8, 3, 1, wpos), constructionColour, StringIds::tile_inspector_industry_section_progress, args);
         }
         // animation type
         {
             FormatArguments args{};
             args.push<int16_t>(tileElement.randomAnimationType());
-            tr.drawStringLeft(dataPosition(8, 3, 2, wpos), completedColour, StringIds::tile_inspector_industry_element_random_animation_type, args);
+            tr.drawStringLeft(dataPosition(8, 3, 2, wpos), completedColour, StringIds::tile_inspector_industry_random_animation_type, args);
         }
     }
 
@@ -531,34 +531,34 @@ namespace OpenLoco::Ui::Windows::TileInspector
         {
             FormatArguments args{};
             args.push<int16_t>(element->baseZ());
-            tr.drawStringLeft(dataPosition(1, 3, 1, wpos), Colour::black, StringIds::tile_inspector_tile_element_base_height, args);
+            tr.drawStringLeft(dataPosition(1, 3, 1, wpos), Colour::black, StringIds::tile_inspector_element_base_height, args);
         }
         // tile type
         {
             FormatArguments args{};
             args.push(getElementTypeName(*element));
             args.push(static_cast<uint16_t>(element->type()));
-            tr.drawStringLeft(dataPosition(1, 3, 2, wpos), Colour::black, StringIds::tile_inspector_tile_element_type, args);
+            tr.drawStringLeft(dataPosition(1, 3, 2, wpos), Colour::black, StringIds::tile_inspector_element_type, args);
         }
 
         // clearance
         {
             FormatArguments args{};
             args.push<int16_t>(element->clearZ());
-            tr.drawStringLeft(dataPosition(2, 3, 1, wpos), Colour::black, StringIds::tile_inspector_tile_element_clearance_height, args);
+            tr.drawStringLeft(dataPosition(2, 3, 1, wpos), Colour::black, StringIds::tile_inspector_element_clearance_height, args);
         }
         // object
         {
             FormatArguments args{};
             args.push(getObjectName(*element));
-            tr.drawStringLeft(dataPosition(2, 3, 2, wpos), Colour::black, StringIds::tile_inspector_tile_element_object, args);
+            tr.drawStringLeft(dataPosition(2, 3, 2, wpos), Colour::black, StringIds::tile_inspector_element_object, args);
         }
 
         // rotation
         {
             FormatArguments args{};
             args.push<int16_t>(element->data()[0] & 0x3);
-            tr.drawStringLeft(dataPosition(3, 3, 1, wpos), Colour::black, StringIds::tile_inspector_tile_element_rotation, args);
+            tr.drawStringLeft(dataPosition(3, 3, 1, wpos), Colour::black, StringIds::tile_inspector_element_rotation, args);
         }
         // owner
         {
@@ -567,7 +567,7 @@ namespace OpenLoco::Ui::Windows::TileInspector
             args.push(std::get<0>(ownerInfo));
             args.push(StringIds::empty);
             args.push<int16_t>(enumValue(std::get<1>(ownerInfo)));
-            tr.drawStringLeft(dataPosition(3, 3, 2, wpos), Colour::black, StringIds::tile_inspector_tile_element_owner, args);
+            tr.drawStringLeft(dataPosition(3, 3, 2, wpos), Colour::black, StringIds::tile_inspector_element_owner, args);
         }
 
         switch (element->type())
