@@ -246,7 +246,7 @@ namespace OpenLoco::Ui::Windows::TileInspector
         StringIds::empty,
         StringIds::empty,
         StringIds::empty,
-        StringIds::tile_inspector_industry_element_random_animation_queued,
+        StringIds::tile_inspector_industry_element_random_animation_playing,
     };
 
     static constexpr StringId kCheckbox3Contents[] = {
@@ -258,7 +258,7 @@ namespace OpenLoco::Ui::Windows::TileInspector
         StringIds::empty,
         StringIds::empty,
         StringIds::empty,
-        StringIds::tile_inspector_industry_element_random_animation_playing,
+        StringIds::tile_inspector_industry_element_random_animation_available,
     };
 
     static void repositionWidget(Widget& widget, const Point* positions)
@@ -401,11 +401,7 @@ namespace OpenLoco::Ui::Windows::TileInspector
         tr.drawStringLeft(point, Colour::black, StringIds::tile_inspector_no_tile_selected);
     }
 
-    static void drawUnknownTileType(Ui::Window& self, Gfx::TextRenderer& tr, Point point)
-    {
-    }
-
-    static void drawIndustryTileData(Ui::Window& self, Gfx::TextRenderer& tr, const TileElementEntry& element, int32_t currentRow)
+    static void drawIndustryTileData(Ui::Window& self, Gfx::TextRenderer& tr, const TileElementEntry& element)
     {
         const IndustryElement& tileElement = element.get<IndustryElement>();
         const auto& industry = *tileElement.industry();
@@ -455,7 +451,7 @@ namespace OpenLoco::Ui::Windows::TileInspector
         self.widgets[widx::industryConstructionCompleteCheckbox].activated = tileElement.isConstructed();
 
         self.widgets[widx::industryRandomAnimationQueuedCheckbox].disabled = !tileElement.isConstructed();
-        self.widgets[widx::industryRandomAnimationQueuedCheckbox].activated = tileElement.randomAnimationQueued();
+        self.widgets[widx::industryRandomAnimationQueuedCheckbox].activated = tileElement.randomAnimationPlaying();
 
         // construction progress
         {
@@ -465,7 +461,7 @@ namespace OpenLoco::Ui::Windows::TileInspector
         }
 
         self.widgets[widx::industryRandomAnimationPlayingCheckbox].disabled = !tileElement.isConstructed();
-        self.widgets[widx::industryRandomAnimationPlayingCheckbox].activated = tileElement.randomAnimationPlaying();
+        self.widgets[widx::industryRandomAnimationPlayingCheckbox].activated = tileElement.randomAnimationAvailable();
 
         // construction progress
         {
@@ -577,10 +573,10 @@ namespace OpenLoco::Ui::Windows::TileInspector
         switch (element->type())
         {
             case ElementType::industry:
-                drawIndustryTileData(self, tr, *element, 3);
+                drawIndustryTileData(self, tr, *element);
                 break;
             default:
-                drawUnknownTileType(self, tr, point);
+                break;
         }
     }
 

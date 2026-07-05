@@ -2174,9 +2174,9 @@ namespace OpenLoco::StringIds
     constexpr StringId tile_inspector_industry_element_colour = 2512;
     constexpr StringId tile_inspector_industry_element_construction_complete = 2513;
     constexpr StringId tile_inspector_industry_element_sequence_index= 2514;
-    constexpr StringId tile_inspector_industry_element_random_animation_queued = 2515;
+    constexpr StringId tile_inspector_industry_element_random_animation_playing = 2515;
     constexpr StringId tile_inspector_industry_element_completed_sections = 2516;
-    constexpr StringId tile_inspector_industry_element_random_animation_playing = 2517;
+    constexpr StringId tile_inspector_industry_element_random_animation_available = 2517;
     constexpr StringId tile_inspector_industry_element_section_progress = 2518;
     constexpr StringId tile_inspector_industry_element_random_animation_type = 2519;
 
