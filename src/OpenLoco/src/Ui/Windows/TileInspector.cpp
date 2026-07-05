@@ -957,10 +957,16 @@ namespace OpenLoco::Ui::Windows::TileInspector
         ToolManager::toolCancel();
     }
 
+    static void onUpdate([[maybe_unused]] Window& self)
+    {
+        WindowManager::invalidate(WindowType::tileInspector);
+    }
+
     static constexpr WindowEventList kEvents = {
         .onClose = onClose,
         .onMouseUp = onMouseUp,
         .onMouseDown = onMouseDown,
+        .onUpdate = onUpdate,
         .onToolUpdate = onToolUpdate,
         .onToolDown = onToolDown,
         .getScrollSize = getScrollSize,
