@@ -745,10 +745,10 @@ namespace OpenLoco::Ui::Windows::ObjectSelectionWindow
     }
 
     template<typename T>
-    static void callDrawPreviewImage(Gfx::DrawingContext& drawingCtx, const Ui::Point& drawingOffset, const Object& objectPtr)
+    static void callDrawPreviewImage(Gfx::DrawingContext& drawingCtx, const Ui::Point& drawingOffset, const Object& objectPtr, const ColourScheme& colourScheme)
     {
         auto object = reinterpret_cast<const T*>(&objectPtr);
-        object->drawPreviewImage(drawingCtx, drawingOffset.x, drawingOffset.y);
+        object->drawPreviewImage(drawingCtx, drawingOffset.x, drawingOffset.y, colourScheme);
     }
 
     // 0x00473579
@@ -767,118 +767,146 @@ namespace OpenLoco::Ui::Windows::ObjectSelectionWindow
 
         drawingCtx.pushRenderTarget(*clipped);
 
+        ColourScheme colourScheme = {};
+        switch (type)
+        {
+            case ObjectType::vehicle:
+            case ObjectType::interfaceSkin:
+            case ObjectType::competitor:
+                colourScheme = { Colour::mutedSeaGreen, Colour::white };
+                break;
+            case ObjectType::scaffolding:
+                colourScheme = { Colour::yellow, Colour::black };
+                break;
+            case ObjectType::currency:
+                colourScheme = { Colour::black, Colour::black };
+                break;
+            case ObjectType::wall:
+            case ObjectType::dock:
+            case ObjectType::road:
+            case ObjectType::track:
+            case ObjectType::trackExtra:
+            case ObjectType::roadStation:
+            case ObjectType::bridge:
+            case ObjectType::airport:
+                colourScheme = { Colour::mutedDarkRed, Colour::yellow };
+                break;
+            default:
+                break;
+        }
+
         switch (type)
         {
             case ObjectType::interfaceSkin:
-                callDrawPreviewImage<InterfaceSkinObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<InterfaceSkinObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::currency:
-                callDrawPreviewImage<CurrencyObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<CurrencyObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::cliffEdge:
-                callDrawPreviewImage<CliffEdgeObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<CliffEdgeObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::water:
-                callDrawPreviewImage<WaterObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<WaterObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::land:
-                callDrawPreviewImage<LandObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<LandObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::wall:
-                callDrawPreviewImage<WallObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<WallObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::trackSignal:
-                callDrawPreviewImage<TrainSignalObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<TrainSignalObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::levelCrossing:
-                callDrawPreviewImage<LevelCrossingObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<LevelCrossingObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::streetLight:
-                callDrawPreviewImage<StreetLightObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<StreetLightObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::tunnel:
-                callDrawPreviewImage<TunnelObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<TunnelObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::bridge:
-                callDrawPreviewImage<BridgeObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<BridgeObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::trainStation:
-                callDrawPreviewImage<TrainStationObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<TrainStationObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::trackExtra:
-                callDrawPreviewImage<TrackExtraObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<TrackExtraObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::track:
-                callDrawPreviewImage<TrackObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<TrackObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::roadStation:
-                callDrawPreviewImage<RoadStationObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<RoadStationObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::roadExtra:
-                callDrawPreviewImage<RoadExtraObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<RoadExtraObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::road:
-                callDrawPreviewImage<RoadObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<RoadObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::airport:
-                callDrawPreviewImage<AirportObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<AirportObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::dock:
-                callDrawPreviewImage<DockObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<DockObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::vehicle:
-                callDrawPreviewImage<VehicleObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<VehicleObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::tree:
-                callDrawPreviewImage<TreeObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<TreeObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::snow:
-                callDrawPreviewImage<SnowObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<SnowObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::hillShapes:
-                callDrawPreviewImage<HillShapesObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<HillShapesObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::building:
-                callDrawPreviewImage<BuildingObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<BuildingObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::scaffolding:
-                callDrawPreviewImage<ScaffoldingObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<ScaffoldingObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::industry:
-                callDrawPreviewImage<IndustryObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<IndustryObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::region:
-                callDrawPreviewImage<RegionObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<RegionObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             case ObjectType::competitor:
-                callDrawPreviewImage<CompetitorObject>(drawingCtx, kObjectPreviewOffset, objectPtr);
+                callDrawPreviewImage<CompetitorObject>(drawingCtx, kObjectPreviewOffset, objectPtr, colourScheme);
                 break;
 
             default:

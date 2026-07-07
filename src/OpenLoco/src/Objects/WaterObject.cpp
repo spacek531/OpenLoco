@@ -52,7 +52,7 @@ namespace OpenLoco
     }
 
     // 0x004C56D3
-    void WaterObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const
+    void WaterObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] const ColourScheme colourScheme) const
     {
         auto colourImage = ImageId(image).withIndexOffset(35).withBlend(ExtColour::water);
         drawingCtx.drawImage(ZoomLevel::full, Ui::Point{ x, y }, colourImage);

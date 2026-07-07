@@ -52,7 +52,7 @@ namespace OpenLoco
         uint8_t roadMods[7];                             // 0x23
         uint16_t designedYear;                           // 0x2A
 
-        void drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const;
+        void drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] ColourScheme colourScheme) const;
         bool validate() const;
         void load(const LoadedObjectHandle& handle, std::span<const std::byte> data, ObjectManager::DependentObjects*);
         void unload();

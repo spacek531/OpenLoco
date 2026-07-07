@@ -8,7 +8,7 @@
 namespace OpenLoco
 {
     // 0x00469A75
-    void SnowObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const
+    void SnowObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] ColourScheme colourScheme) const
     {
         drawingCtx.drawImage(ZoomLevel::full, x, y, image);
     }

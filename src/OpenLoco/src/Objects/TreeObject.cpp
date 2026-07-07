@@ -10,7 +10,7 @@
 namespace OpenLoco
 {
     // 0x004BE2A2
-    void TreeObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const
+    void TreeObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] const ColourScheme colourScheme) const
     {
         uint32_t image = getTreeGrowthDisplayOffset() * numRotations;
         auto rotation = (numRotations - 1) & 2;

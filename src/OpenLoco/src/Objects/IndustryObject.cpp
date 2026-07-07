@@ -95,7 +95,7 @@ namespace OpenLoco
     }
 
     // 0x0045932D
-    void IndustryObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const
+    void IndustryObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] ColourScheme colourScheme) const
     {
         drawIndustry(drawingCtx, x, y + 40);
     }

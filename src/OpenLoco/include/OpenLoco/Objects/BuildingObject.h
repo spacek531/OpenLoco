@@ -85,7 +85,7 @@ namespace OpenLoco
         uint8_t numElevatorSequences;              // 0XAD
         uint32_t elevatorHeightSequencesOffset[4]; // 0XAE Access with getElevatorHeightSequence helper method
 
-        void drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const;
+        void drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] ColourScheme colourScheme) const;
         void drawBuilding(Gfx::DrawingContext& drawingCtx, uint8_t buildingRotation, int16_t x, int16_t y, Colour colour) const;
         void drawDescription(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] const int16_t width) const;
         bool validate() const;

@@ -55,7 +55,7 @@ namespace OpenLoco
         uint32_t cargoOffsetBytes[4][4]; // 0x2E
         uint32_t var_6E[16];
 
-        void drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const;
+        void drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, const ColourScheme colourScheme) const;
         void drawDescription(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] const int16_t width) const;
         bool validate() const;
         void load(const LoadedObjectHandle& handle, std::span<const std::byte> data, ObjectManager::DependentObjects*);

@@ -100,7 +100,7 @@ namespace OpenLoco
     }
 
     // 0x004699A8
-    void LandObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const
+    void LandObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] ColourScheme colourScheme) const
     {
         uint32_t imageId = image + (numGrowthStages - 1) * numImagesPerGrowthStage;
         drawingCtx.drawImage(ZoomLevel::full, x, y, imageId);

@@ -60,7 +60,7 @@ namespace OpenLoco
         uint8_t displayOffset;     // 0x34
         uint8_t pad_35;
 
-        void drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const;
+        void drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] const ColourScheme colourScheme) const;
         bool validate() const;
         void load(const LoadedObjectHandle& handle, std::span<const std::byte> data, ObjectManager::DependentObjects* dependencies);
         void unload();

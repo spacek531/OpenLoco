@@ -15,11 +15,11 @@ namespace OpenLoco
     static constexpr Ui::Size kObjectPreviewSize = { 112, 112 };
 
     // 0x00434D5B
-    void CompetitorObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const
+    void CompetitorObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] ColourScheme colourScheme) const
     {
-        drawingCtx.drawRect(0, 0, kObjectPreviewSize.width, kObjectPreviewSize.height, Colours::getShade(Colour::mutedSeaGreen, 1), Gfx::RectFlags::none);
+        drawingCtx.drawRect(0, 0, kObjectPreviewSize.width, kObjectPreviewSize.height, Colours::getShade(colourScheme.primary, 1), Gfx::RectFlags::none);
 
-        auto image = Gfx::recolour(images[0] + 1, Colour::mutedSeaGreen);
+        auto image = Gfx::recolour(images[0] + 1, colourScheme.primary);
         drawingCtx.drawImage(ZoomLevel::full, x - 32, y - 32, image);
     }
 

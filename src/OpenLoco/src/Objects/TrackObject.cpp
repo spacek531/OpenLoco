@@ -9,9 +9,9 @@
 namespace OpenLoco
 {
     // 0x004A6CBA
-    void TrackObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const
+    void TrackObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] const ColourScheme colourScheme) const
     {
-        auto colourImage = Gfx::recolour(image + TrackObj::ImageIds::kUiPreviewImage0, Colour::mutedDarkRed);
+        auto colourImage = Gfx::recolour(image + TrackObj::ImageIds::kUiPreviewImage0, colourScheme.primary);
 
         drawingCtx.drawImage(ZoomLevel::full, x, y, colourImage + TrackObj::ImageIds::Style0::kStraight0BallastNE);
         drawingCtx.drawImage(ZoomLevel::full, x, y, colourImage + TrackObj::ImageIds::Style0::kStraight0SleeperNE);

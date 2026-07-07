@@ -13,7 +13,7 @@ namespace OpenLoco
     static constexpr uint8_t kDescriptionRowHeight = 10;
 
     // 0x00477F69
-    void StreetLightObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const
+    void StreetLightObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] ColourScheme colourScheme) const
     {
         Ui::Point imgPosition = Ui::Point{ x, y } - Ui::Point{ 20, 1 };
         for (auto i = 0; i < 3; i++)

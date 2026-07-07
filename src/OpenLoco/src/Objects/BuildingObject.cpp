@@ -10,7 +10,7 @@
 namespace OpenLoco
 {
     // 0x0042DE40
-    void BuildingObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const
+    void BuildingObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] ColourScheme colourScheme) const
     {
         auto bit = Numerics::bitScanReverse(colours);
 

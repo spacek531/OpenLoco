@@ -11,7 +11,7 @@
 namespace OpenLoco
 {
     // 0x00490A26
-    void TrainStationObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const
+    void TrainStationObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] const ColourScheme colourScheme) const
     {
         auto colourImage = Gfx::recolour(image, Colour::mutedDarkRed);
 

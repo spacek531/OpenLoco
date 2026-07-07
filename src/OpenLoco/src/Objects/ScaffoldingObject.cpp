@@ -11,9 +11,9 @@
 namespace OpenLoco
 {
     // 0x0042DF15
-    void ScaffoldingObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const
+    void ScaffoldingObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] ColourScheme colourScheme) const
     {
-        auto colourImage = Gfx::recolour(image, Colour::yellow);
+        auto colourImage = Gfx::recolour(image, colourScheme.primary);
 
         drawingCtx.drawImage(ZoomLevel::full, x, y + 23, colourImage + Scaffolding::ImageIds::type21x1SegmentBack);
         drawingCtx.drawImage(ZoomLevel::full, x, y + 23, colourImage + Scaffolding::ImageIds::type21x1SegmentFront);

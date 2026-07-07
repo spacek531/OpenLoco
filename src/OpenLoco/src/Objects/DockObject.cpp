@@ -9,9 +9,9 @@
 namespace OpenLoco
 {
     // 0x00490F14
-    void DockObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const
+    void DockObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] ColourScheme colourScheme) const
     {
-        auto colourImage = Gfx::recolour(image, Colour::mutedDarkRed);
+        auto colourImage = Gfx::recolour(image, colourScheme.primary);
         drawingCtx.drawImage(ZoomLevel::full, x - 34, y - 34, colourImage);
     }
 

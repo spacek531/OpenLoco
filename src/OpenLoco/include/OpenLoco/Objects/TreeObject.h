@@ -57,7 +57,7 @@ namespace OpenLoco
         int16_t rating;                  // 0x48
         int16_t demolishRatingReduction; // 0x4A
 
-        void drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const;
+        void drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, const ColourScheme colourScheme) const;
         uint8_t getTreeGrowthDisplayOffset() const;
         bool validate() const;
         void load(const LoadedObjectHandle& handle, std::span<const std::byte> data, ObjectManager::DependentObjects*);

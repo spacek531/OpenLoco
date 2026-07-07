@@ -20,13 +20,12 @@ using namespace OpenLoco::Diagnostics;
 namespace OpenLoco
 {
     // 0x004B8C52
-    void VehicleObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const
+    void VehicleObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, const ColourScheme colourScheme) const
     {
         uint8_t yaw = Ui::WindowManager::getVehiclePreviewRotationFrameYaw();
         uint8_t roll = Ui::WindowManager::getVehiclePreviewRotationFrameRoll();
 
-        ColourScheme colour{ Colour::mutedSeaGreen, Colour::white };
-        drawVehicleOverview(drawingCtx, Ui::Point{ x, y } + Ui::Point{ 0, 19 }, *this, yaw, roll, colour);
+        drawVehicleOverview(drawingCtx, Ui::Point{ x, y } + Ui::Point{ 0, 19 }, *this, yaw, roll, colourScheme);
     }
 
     // TODO: Should only be defined in ObjectSelectionWindow

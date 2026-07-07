@@ -62,7 +62,7 @@ namespace OpenLoco
     }
 
     // 0x00478156
-    void LevelCrossingObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const
+    void LevelCrossingObject::drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] ColourScheme colourScheme) const
     {
         auto imageId = (closedFrames + 1) * 8;
         auto frameCount = (closingFrames - 1);

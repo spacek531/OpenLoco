@@ -46,7 +46,7 @@ namespace OpenLoco
         CargoInfluenceTownFilterType cargoInfluenceTownFilter[4]; // 0x0D valid values 0, 1, 2
         uint8_t pad_11;
 
-        void drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y) const;
+        void drawPreviewImage(Gfx::DrawingContext& drawingCtx, const int16_t x, const int16_t y, [[maybe_unused]] ColourScheme colourScheme) const;
         // 0x0043CB89
         bool validate() const { return true; }
         void load(const LoadedObjectHandle& handle, std::span<const std::byte> data, ObjectManager::DependentObjects* dependencies);
