@@ -8,6 +8,7 @@
 #include "Objects/RoadObject.h"
 #include "Objects/TrackObject.h"
 #include "Objects/VehicleObject.h"
+#include "Vehicles/DefaultColours.hpp"
 #include "Vehicles/Vehicle.h"
 #include "Vehicles/Vehicle2.h"
 #include "Vehicles/VehicleBody.h"
@@ -542,6 +543,8 @@ namespace OpenLoco
 
         auto colourScheme = getCompanyVehicleColourScheme(companyId, *vehObject);
 
+        colourScheme = getSpecialColourScheme(VehicleObject::kObjectType, vehicleTypeIdx, colourScheme);
+
         drawVehicleOverview(drawingCtx, offset, *vehObject, yaw, roll, colourScheme);
     }
 
@@ -578,6 +581,8 @@ namespace OpenLoco
         loc.y += getVehicleObjectYDisplayOffset(*vehObject);
 
         auto colourScheme = getCompanyVehicleColourScheme(company, *vehObject);
+
+        colourScheme = getSpecialColourScheme(VehicleObject::kObjectType, vehicleTypeIdx, colourScheme);
 
         const auto yaw = 40;
 

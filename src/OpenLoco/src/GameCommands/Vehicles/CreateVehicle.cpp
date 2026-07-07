@@ -18,6 +18,7 @@
 #include "Random.h"
 #include "Types.hpp"
 #include "Ui/WindowManager.h"
+#include "Vehicles/DefaultColours.hpp"
 #include "Vehicles/OrderManager.h"
 #include "Vehicles/RoutingManager.h"
 #include "Vehicles/Vehicle.h"
@@ -335,6 +336,7 @@ namespace OpenLoco::GameCommands
         {
             colourScheme = company->vehicleColours[vehObject->colourType - 1];
         }
+        colourScheme = getSpecialColourScheme(VehicleObject::kObjectType, vehicleTypeId, colourScheme);
 
         VehicleBogie* newCarStart = nullptr;
         for (auto bodyNumber = 0; bodyNumber < vehObject->numCarComponents; ++bodyNumber)

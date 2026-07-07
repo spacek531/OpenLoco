@@ -57,6 +57,7 @@
 #include "Ui/Widgets/TextBoxWidget.h"
 #include "Ui/Window.h"
 #include "Ui/WindowManager.h"
+#include "Vehicles/DefaultColours.hpp"
 #include "World/CompanyManager.h"
 #include <OpenLoco/Core/EnumFlags.hpp>
 #include <OpenLoco/Core/FileSystem.hpp>
@@ -794,6 +795,7 @@ namespace OpenLoco::Ui::Windows::ObjectSelectionWindow
             default:
                 break;
         }
+        colourScheme = getSpecialColourScheme(header, colourScheme);
 
         switch (type)
         {
