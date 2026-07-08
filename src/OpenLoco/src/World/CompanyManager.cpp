@@ -15,6 +15,7 @@
 #include "Graphics/Colour.h"
 #include "Localisation/FormatArguments.hpp"
 #include "Localisation/Formatting.h"
+#include "Map/QuantityLimits.h"
 #include "Map/Tile.h"
 #include "Map/TileManager.h"
 #include "MessageManager.h"
@@ -575,7 +576,7 @@ namespace OpenLoco::CompanyManager
         company->name = StringIds::new_company;
         company->ownerName = StringIds::new_owner;
         company->startedDate = getCurrentDay();
-
+        Map::Count::resetCompanyCount(chosenCompanyId);
         if (isPlayer)
         {
             Colour primaryColour = Colour::max;

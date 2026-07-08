@@ -5,6 +5,7 @@
 #include "Map/AnimationManager.h"
 #include "Map/BuildingElement.h"
 #include "Map/IndustryElement.h"
+#include "Map/QuantityLimits.h"
 #include "Map/StationElement.h"
 #include "Map/SurfaceElement.h"
 #include "Map/TileClearance.h"
@@ -432,6 +433,16 @@ namespace OpenLoco::GameCommands
             returnState.lastConstructedAdjoiningStationPos = args.pos;
             auto nearbyStation = flags & Flags::aiAllocated ? findNearbyStationDocksAi(args.pos) : findNearbyStationDocks(args.pos);
             returnState.lastConstructedAdjoiningStation = nearbyStation.id;
+        }
+
+        auto& companyCount = Map::Count::getCompanyObjectCount(getUpdatingCompanyId());
+        if (!companyCount.canAdd(ObjectType::dock, args.type))
+        {
+            return kFailure;
+        }
+        if (flags & Flags::apply && !(flags & Flags::ghost))
+        {
+            companyCount.add(ObjectType::dock, args.type);
         }
 
         if (!(flags & Flags::ghost))

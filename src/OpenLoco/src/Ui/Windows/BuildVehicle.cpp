@@ -14,6 +14,7 @@
 #include "Localisation/FormatArguments.hpp"
 #include "Localisation/Formatting.h"
 #include "Localisation/StringIds.h"
+#include "Map/QuantityLimits.h"
 #include "Objects/CargoObject.h"
 #include "Objects/InterfaceSkinObject.h"
 #include "Objects/ObjectManager.h"
@@ -1452,6 +1453,24 @@ namespace OpenLoco::Ui::Windows::BuildVehicle
 
         auto vehicleObj = ObjectManager::get<VehicleObject>(self.rowHover);
         auto buffer = const_cast<char*>(StringManager::getString(StringIds::buffer_1250));
+
+        {
+            auto& companyCount = Map::Count::getCompanyObjectCount(CompanyManager::getControllingId());
+            auto& objectCount = companyCount.count(ObjectType::vehicle, self.rowHover);
+            FormatArguments args{};
+            args.push<int32_t>(objectCount.count);
+            StringId countStringId = StringIds::vehicles_in_use;
+            if (objectCount.limit != Map::Count::kObjectCountUnlimited)
+            {
+                args.push<int32_t>(objectCount.limit);
+                countStringId = StringIds::vehicles_in_use_with_limit;
+                if (objectCount.count >= objectCount.limit)
+                {
+                    countStringId = StringIds::vehicles_in_use_limit_reached;
+                }
+            }
+            buffer = StringManager::formatString(buffer, countStringId, args);
+        }
 
         {
             auto cost = Economy::getInflationAdjustedCost(vehicleObj->costFactor, vehicleObj->costIndex, 6);

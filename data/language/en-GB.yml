@@ -2510,3 +2510,6 @@ strings:
   2455: "Open jukebox..."
   2456: "{COLOUR WINDOW_2}Cargo awaiting processing:"
   2457: "{COLOUR WINDOW_2}Cargo awaiting transport:"
+  2600: "{COLOUR WINDOW_2} In use: {COLOUR BLACK}{INT32}{NEWLINE}"
+  2601: "{COLOUR WINDOW_2} In use: {COLOUR BLACK}{INT32}/{INT32}{NEWLINE}"
+  2602: "{COLOUR WINDOW_2} In use: {COLOUR RED}{INT32}/{INT32}{NEWLINE}"

@@ -1,6 +1,7 @@
 #include "GameCommands/Airports/RemoveAirport.h"
 #include "Economy/Economy.h"
 #include "Localisation/StringIds.h"
+#include "Map/QuantityLimits.h"
 #include "Map/StationElement.h"
 #include "Map/SurfaceElement.h"
 #include "Map/TileElement.h"
@@ -289,6 +290,9 @@ namespace OpenLoco::GameCommands
         {
             return kFailure;
         }
+
+        auto& companyCount = Map::Count::getCompanyObjectCount(getUpdatingCompanyId());
+        companyCount.subtract(ObjectType::airport, foundStationEl->objectId());
 
         // 0x00493719
         return loc_49372F(stationId, *foundStationEl, foundPos, flags);

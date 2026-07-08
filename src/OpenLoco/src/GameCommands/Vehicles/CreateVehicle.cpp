@@ -7,6 +7,7 @@
 #include "Entities/EntityManager.h"
 #include "GameCommands/GameCommands.h"
 #include "Localisation/StringIds.h"
+#include "Map/QuantityLimits.h"
 #include "Map/Tile.h"
 #include "MessageManager.h"
 #include "Objects/ObjectManager.h"
@@ -629,6 +630,12 @@ namespace OpenLoco::GameCommands
             return kFailure;
         }
 
+        auto& companyCount = Map::Count::getCompanyObjectCount(getUpdatingCompanyId());
+        if (!companyCount.canAdd(ObjectType::vehicle, vehicleTypeId))
+        {
+            return kFailure;
+        }
+
         if (flags & Flags::apply)
         {
             auto vehObject = ObjectManager::get<VehicleObject>(vehicleTypeId);
@@ -645,6 +652,7 @@ namespace OpenLoco::GameCommands
             {
                 // 0x004AE6DE
                 updateWholeVehicle(_head, std::nullopt);
+                companyCount.add(ObjectType::vehicle, vehicleTypeId);
             }
             else
             {
@@ -703,6 +711,12 @@ namespace OpenLoco::GameCommands
             return kFailure;
         }
 
+        auto& companyCount = Map::Count::getCompanyObjectCount(getUpdatingCompanyId());
+        if (!companyCount.canAdd(ObjectType::vehicle, vehicleTypeId))
+        {
+            return kFailure;
+        }
+
         if (flags & Flags::apply)
         {
             std::optional<TrainPlacementData> placement = std::nullopt;
@@ -716,6 +730,7 @@ namespace OpenLoco::GameCommands
             {
                 // Note train.cars is no longer valid from after createCar
                 updateWholeVehicle(train.head, placement);
+                companyCount.add(ObjectType::vehicle, vehicleTypeId);
             }
             else
             {

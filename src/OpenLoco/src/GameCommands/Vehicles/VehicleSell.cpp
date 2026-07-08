@@ -3,6 +3,7 @@
 #include "GameCommands/GameCommands.h"
 #include "GameCommands/Vehicles/VehiclePickupAir.h"
 #include "GameCommands/Vehicles/VehiclePickupWater.h"
+#include "Map/QuantityLimits.h"
 #include "Vehicles/Vehicle.h"
 #include "Vehicles/VehicleBody.h"
 #include "Vehicles/VehicleBogie.h"
@@ -30,12 +31,17 @@ namespace OpenLoco::GameCommands
         {
             return kFailure;
         }
+        auto& companyCount = Map::Count::getCompanyObjectCount(getUpdatingCompanyId());
         Vehicle train(*head);
         if (head == vehBase)
         {
             for (const auto& car : train.cars)
             {
                 refundCost += car.front->refundCost;
+                if (flags & Flags::apply)
+                {
+                    companyCount.subtract(ObjectType::vehicle, car.front->objectId);
+                }
             }
         }
         else
@@ -44,6 +50,10 @@ namespace OpenLoco::GameCommands
             if (bogie == nullptr)
             {
                 return kFailure;
+            }
+            if (flags & Flags::apply)
+            {
+                companyCount.subtract(ObjectType::vehicle, bogie->objectId);
             }
             refundCost = bogie->refundCost;
         }

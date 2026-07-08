@@ -15,6 +15,7 @@
 #include "Localisation/StringManager.h"
 #include "Map/BuildingElement.h"
 #include "Map/IndustryElement.h"
+#include "Map/QuantityLimits.h"
 #include "Map/RoadElement.h"
 #include "Map/SignalElement.h"
 #include "Map/StationElement.h"
@@ -207,6 +208,25 @@ namespace OpenLoco::S5
                     {
                         dstElem.setMod(m, (d.mods() >> m) & 1);
                     }
+
+                    if (dstElem.sequenceIndex() == 0)
+                    {
+                        auto& owner = Map::Count::getCompanyObjectCount(dstElem.owner());
+                        owner.add(ObjectType::track, dstElem.trackObjectId());
+                        if (dstElem.hasBridge())
+                        {
+                            owner.add(ObjectType::bridge, dstElem.bridge());
+                        }
+                        if (dstElem.mods())
+                        {
+                            auto mods = dstElem.mods();
+                            for (auto mod = Numerics::bitScanForward(mods); mod != -1; mod = Numerics::bitScanForward(mods))
+                            {
+                                mods &= ~(1ULL << mod);
+                                owner.add(ObjectType::trackExtra, mod);
+                            }
+                        }
+                    }
                     break;
                 }
                 case World::ElementType::station:
@@ -225,6 +245,26 @@ namespace OpenLoco::S5
                     dstElem.setStationType(static_cast<StationType>(d.stationType()));
                     dstElem.setStationId(static_cast<StationId>(d.stationId()));
                     dstElem.setBuildingType(d.buildingType());
+
+                    if (dstElem.sequenceIndex() == 0)
+                    {
+                        auto& owner = Map::Count::getCompanyObjectCount(dstElem.owner());
+                        switch (dstElem.stationType())
+                        {
+                            case StationType::airport:
+                                owner.add(ObjectType::airport, dstElem.objectId());
+                                break;
+                            case StationType::docks:
+                                owner.add(ObjectType::dock, dstElem.objectId());
+                                break;
+                            case StationType::roadStation:
+                                owner.add(ObjectType::roadStation, dstElem.objectId());
+                                break;
+                            case StationType::trainStation:
+                                owner.add(ObjectType::trainStation, dstElem.objectId());
+                                break;
+                        }
+                    }
                     break;
                 }
                 case World::ElementType::signal:
@@ -329,6 +369,25 @@ namespace OpenLoco::S5
                     dstElem.setHasLevelCrossing(d.hasLevelCrossing());
                     dstElem.setUnk7_40(d.unk7_40());
                     dstElem.setUnk7_80(d.unk7_80());
+
+                    if (dstElem.sequenceIndex() == 0)
+                    {
+                        auto& owner = Map::Count::getCompanyObjectCount(dstElem.owner());
+                        owner.add(ObjectType::road, dstElem.roadObjectId());
+                        if (dstElem.hasBridge())
+                        {
+                            owner.add(ObjectType::bridge, dstElem.bridge());
+                        }
+                        if (dstElem.mods())
+                        {
+                            auto mods = dstElem.mods();
+                            for (auto mod = Numerics::bitScanForward(mods); mod != -1; mod = Numerics::bitScanForward(mods))
+                            {
+                                mods &= ~(1ULL << mod);
+                                owner.add(ObjectType::roadExtra, mod);
+                            }
+                        }
+                    }
                     break;
                 }
                 case World::ElementType::industry:
@@ -728,6 +787,8 @@ namespace OpenLoco::S5
             Ui::ProgressBar::begin(StringIds::loading);
             Ui::ProgressBar::setProgress(10);
 
+            Map::Count::resetAllCount();
+
             auto file = loadSave(stream);
 
             Ui::ProgressBar::setProgress(90);
@@ -851,6 +912,7 @@ namespace OpenLoco::S5
                     .errorCode = -3,
                     .errorMessage = StringIds::null,
                     .objectList = loadObjectResult.problemObjects,
+
                 };
 
                 if (hasLoadFlags(flags, LoadFlags::twoPlayer))

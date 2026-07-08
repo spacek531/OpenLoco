@@ -1,6 +1,7 @@
 #include "GameCommands/Docks/RemovePort.h"
 #include "Economy/Economy.h"
 #include "Localisation/StringIds.h"
+#include "Map/QuantityLimits.h"
 #include "Map/StationElement.h"
 #include "Map/SurfaceElement.h"
 #include "Map/TileElement.h"
@@ -12,6 +13,8 @@
 #include "World/Industry.h"
 #include "World/Station.h"
 #include "World/StationManager.h"
+
+#include <sys/stat.h>
 
 namespace OpenLoco::GameCommands
 {
@@ -124,6 +127,9 @@ namespace OpenLoco::GameCommands
         // Calculate base removal cost
         auto* dockObj = ObjectManager::get<DockObject>(stationEl->objectId());
         currency32_t totalCost = Economy::getInflationAdjustedCost(dockObj->sellCostFactor, dockObj->costIndex, 7);
+
+        auto& companyCount = Map::Count::getCompanyObjectCount(getUpdatingCompanyId());
+        companyCount.subtract(ObjectType::airport, stationEl->objectId());
 
         // Remove the actual tile elements associated with the port
         if (!removePortTileElements(args.pos, flags))

@@ -3,6 +3,7 @@
 #include "Localisation/StringIds.h"
 #include "Map/AnimationManager.h"
 #include "Map/BuildingElement.h"
+#include "Map/QuantityLimits.h"
 #include "Map/QuarterTile.h"
 #include "Map/StationElement.h"
 #include "Map/SurfaceElement.h"
@@ -332,6 +333,16 @@ namespace OpenLoco::GameCommands
         if ((flags & Flags::apply) && !(flags & Flags::aiAllocated) && !(flags & Flags::ghost))
         {
             town->numberOfAirports++;
+        }
+
+        auto& companyCount = Map::Count::getCompanyObjectCount(getUpdatingCompanyId());
+        if (!companyCount.canAdd(ObjectType::airport, args.type))
+        {
+            return kFailure;
+        }
+        if (flags & Flags::apply && !(flags & Flags::ghost))
+        {
+            companyCount.add(ObjectType::airport, args.type);
         }
 
         if ((flags & Flags::ghost) && (flags & Flags::apply))

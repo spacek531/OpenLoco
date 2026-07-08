@@ -8,6 +8,7 @@
 #include "Effects/SplashEffect.h"
 #include "Effects/VehicleCrashEffect.h"
 #include "Entities/Entity.h"
+#include "Map/QuantityLimits.h"
 #include "Vehicles/Vehicle.h"
 #include "Vehicles/Vehicle1.h"
 #include "Vehicles/Vehicle2.h"
@@ -800,6 +801,12 @@ namespace OpenLoco::S5
         dst.breakdownFlags = static_cast<Vehicles::BreakdownFlags>(src.breakdownFlags);
         dst.refundCost = src.refundCost;
         dst.breakdownTimeout = src.breakdownTimeout;
+
+        if (dst.subType == OpenLoco::Vehicles::VehicleEntityType::body_start)
+        {
+            auto& owner = Map::Count::getCompanyObjectCount(dst.owner);
+            owner.add(ObjectType::vehicle, dst.objectId);
+        }
     }
 
     static void importVehicleTail(OpenLoco::Vehicles::VehicleTail& dst, const S5::VehicleTail& src)

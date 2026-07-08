@@ -2171,6 +2171,9 @@ namespace OpenLoco::StringIds
     constexpr StringId options_open_jukebox = 2455;
     constexpr StringId cargo_awaiting_processing = 2456;
     constexpr StringId cargo_awaiting_transport = 2457;
+    constexpr StringId vehicles_in_use = 2600;
+    constexpr StringId vehicles_in_use_with_limit = 2601;
+    constexpr StringId vehicles_in_use_limit_reached = 2602;
 
     constexpr StringId temporary_object_load_str_0 = 8192;
     constexpr StringId temporary_object_load_str_1 = 8193;
