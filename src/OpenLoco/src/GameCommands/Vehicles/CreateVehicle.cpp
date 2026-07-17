@@ -655,6 +655,7 @@ namespace OpenLoco::GameCommands
                 // 0x004AE6DE
                 updateWholeVehicle(_head, std::nullopt);
                 companyCount.add(ObjectType::vehicle, vehicleTypeId);
+                setSpecialVehicleName(ObjectType::vehicle, vehicleTypeId, *_head);
             }
             else
             {
