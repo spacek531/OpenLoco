@@ -5,6 +5,7 @@
 #include "GameCommands/GameCommands.h"
 #include "Random.h"
 #include "Types.hpp"
+#include "Ui/WindowManager.h"
 #include "Vehicles/Vehicle.h"
 #include "Vehicles/Vehicle1.h"
 #include "Vehicles/Vehicle2.h"
@@ -59,6 +60,18 @@ namespace OpenLoco::GameCommands
         if (!(flags & GameCommands::Flags::ghost))
         {
             Vehicles::playPickupSound(veh2);
+        }
+
+        auto main = Ui::WindowManager::getMainWindow();
+        EntityId watchedId = Ui::Windows::Main::viewportCurrentFocusedEntity(*main);
+        auto entity = EntityManager::get<Vehicles::VehicleBase>(watchedId);
+        if (entity != nullptr && entity->isBase<Vehicles::VehicleBase>())
+        {
+            EntityId watchedHeadId = entity->head;
+            if (watchedHeadId == train.head->id)
+            {
+                Ui::Windows::Main::viewportUnfocusFromEntity(*main);
+            }
         }
 
         head->liftUpVehicle();

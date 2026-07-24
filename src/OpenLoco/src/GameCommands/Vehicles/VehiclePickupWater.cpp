@@ -67,6 +67,18 @@ namespace OpenLoco::GameCommands
             }
         }
 
+        auto main = Ui::WindowManager::getMainWindow();
+        EntityId watchedId = Ui::Windows::Main::viewportCurrentFocusedEntity(*main);
+        auto entity = EntityManager::get<Vehicles::VehicleBase>(watchedId);
+        if (entity != nullptr && entity->isBase<Vehicles::VehicleBase>())
+        {
+            EntityId watchedHeadId = entity->head;
+            if (watchedHeadId == train.head->id)
+            {
+                Ui::Windows::Main::viewportUnfocusFromEntity(*main);
+            }
+        }
+
         train.applyToComponents([](auto& component) {
             component.tileX = -1;
             component.moveTo({ static_cast<int16_t>(0x8000), 0, 0 });

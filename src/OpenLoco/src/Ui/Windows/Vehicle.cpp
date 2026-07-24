@@ -191,6 +191,35 @@ namespace OpenLoco::Ui::Windows::Vehicle
             return Windows::PromptOkCancel::open(windowTitle, windowMessage, format, windowConfirm);
         }
 
+        static const Vehicles::Car* getWatchedCar(Window& self)
+        {
+            auto main = WindowManager::getMainWindow();
+            auto watchedId = Windows::Main::viewportCurrentFocusedEntity(*main);
+            if (watchedId == EntityId::null)
+            {
+                return nullptr;
+            }
+            auto entity = EntityManager::get<Vehicles::VehicleBase>(watchedId);
+            if ((entity == nullptr) || !entity->isBase<Vehicles::VehicleBase>())
+            {
+                return nullptr;
+            }
+            auto vehHead = Common::getVehicle(self);
+            if ((self.number != enumValue(entity->head)) || (vehHead == nullptr))
+            {
+                return nullptr;
+            }
+            Vehicles::Vehicle train(*vehHead);
+            for (const auto& car : train.cars)
+            {
+                if (car.body && car.body->id == watchedId)
+                {
+                    return &car;
+                }
+            }
+            return nullptr;
+        }
+
         static void onClose(Window& self);
         static void setActiveTabs(Window& self);
         static void textInput(Window& self, const WidgetIndex_t callingWidget, const WidgetId id, const char* const input);
@@ -821,7 +850,34 @@ namespace OpenLoco::Ui::Windows::Vehicle
                     return;
                 }
                 Vehicles::Vehicle train(*vehHead);
-                EntityId targetEntity = train.veh2->id;
+                EntityId targetEntity = EntityId::null;
+
+                auto* watchedCar = Common::getWatchedCar(self);
+                if (watchedCar != nullptr)
+                {
+                    bool carFound = false;
+                    for (const auto& car : train.cars)
+                    {
+                        if (carFound && car.body != nullptr)
+                        {
+                            targetEntity = car.body->id;
+                            break;
+                        }
+                        if (watchedCar->body == car.body)
+                        {
+                            carFound = true;
+                        }
+                    }
+                }
+
+                if (targetEntity == EntityId::null)
+                {
+                    Vehicles::Car firstCar = train.cars.firstCar;
+                    if (firstCar.body != nullptr && firstCar.body->id != EntityId::null)
+                    {
+                        targetEntity = firstCar.body->id;
+                    }
+                }
 
                 // Focus viewport on vehicle, with locking.
                 auto main = WindowManager::getMainWindow();
@@ -5032,12 +5088,6 @@ namespace OpenLoco::Ui::Windows::Vehicle
             }
 
             Vehicles::Vehicle train(*head);
-            EntityId viewportFollowEntity = train.veh2->id;
-            auto main = Ui::WindowManager::getMainWindow();
-            if (Windows::Main::viewportIsFocusedOnEntity(*main, viewportFollowEntity))
-            {
-                Windows::Main::viewportUnfocusFromEntity(*main);
-            }
 
             GameCommands::setErrorTitle(StringIds::cant_remove_string_id);
             FormatArguments args{};

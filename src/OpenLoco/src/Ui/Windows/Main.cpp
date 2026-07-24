@@ -142,6 +142,16 @@ namespace OpenLoco::Ui::Windows::Main
         return main.viewportConfigurations[0].viewportTargetSprite != EntityId::null;
     }
 
+    EntityId viewportCurrentFocusedEntity(const Window& main)
+    {
+        if (main.viewports[0] == nullptr)
+        {
+            return EntityId::null;
+        }
+
+        return main.viewportConfigurations[0].viewportTargetSprite;
+    }
+
     // Stop following the followed entity, leaving the viewport centred on it.
     void viewportUnfocusFromEntity(Window& main)
     {

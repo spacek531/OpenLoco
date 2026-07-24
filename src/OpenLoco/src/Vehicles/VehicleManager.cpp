@@ -308,6 +308,12 @@ namespace OpenLoco::VehicleManager
         Ui::WindowManager::invalidate(Ui::WindowType::vehicle, enumValue(car.front->head));
         Ui::WindowManager::invalidate(Ui::WindowType::vehicleList);
 
+        auto main = Ui::WindowManager::getMainWindow();
+        EntityId watchedId = Ui::Windows::Main::viewportCurrentFocusedEntity(*main);
+        if (car.body->id == watchedId || car.front->id == watchedId || car.back->id == watchedId)
+        {
+            Ui::Windows::Main::viewportUnfocusFromEntity(*main);
+        }
         // Component before this car
         Vehicles::VehicleBase* previous = [&car]() {
             // Points to one behind the iterator
@@ -353,11 +359,17 @@ namespace OpenLoco::VehicleManager
     void deleteTrain(Vehicles::VehicleHead& head)
     {
         Vehicles::Vehicle train(head);
-        EntityId viewportFollowEntity = train.veh2->id;
+
         auto main = Ui::WindowManager::getMainWindow();
-        if (Ui::Windows::Main::viewportIsFocusedOnEntity(*main, viewportFollowEntity))
+        EntityId watchedId = Ui::Windows::Main::viewportCurrentFocusedEntity(*main);
+        auto entity = EntityManager::get<Vehicles::VehicleBase>(watchedId);
+        if (entity != nullptr && entity->isBase<Vehicles::VehicleBase>())
         {
-            Ui::Windows::Main::viewportUnfocusFromEntity(*main);
+            EntityId watchedHeadId = entity->head;
+            if (watchedHeadId == train.head->id)
+            {
+                Ui::Windows::Main::viewportUnfocusFromEntity(*main);
+            }
         }
 
         Ui::WindowManager::close(Ui::WindowType::vehicle, enumValue(head.id));
