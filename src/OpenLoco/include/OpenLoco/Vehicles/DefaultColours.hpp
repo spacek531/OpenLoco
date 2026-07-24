@@ -34,6 +34,8 @@ namespace OpenLoco
         { "AF26BLDD", ColourScheme(Colour::green, Colour::yellow) },
         { "AF26DORO", ColourScheme(Colour::mutedTeal, Colour::white) },
         { "AF26TOTO", ColourScheme(Colour::darkRed, Colour::black) },
+        { "AF26ALYS", ColourScheme(Colour::green, Colour::red) },
+        { "AF26NATH", ColourScheme(Colour::yellow, Colour::blue) },
     });
 
     inline const ColourScheme getSpecialColourScheme(const ObjectHeader& header, ColourScheme colourScheme)
@@ -76,6 +78,8 @@ namespace OpenLoco
         { "AF26BLDD", "Blaidd" },
         { "AF26DORO", "Dorothy and Toto" },
         { "AF26TOTO", "Dorothy and Toto" },
+        { "AF26ALYS", "Alyssa" },
+        { "AF26NATH", "Nathan" },
     });
 
     static void setSpecialVehicleName(const ObjectHeader& header, const Vehicles::VehicleHead& head)
